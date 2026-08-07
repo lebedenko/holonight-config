@@ -1,0 +1,21 @@
+set(prefix "@CMAKE_CURRENT_BINARY_DIR@/consumer-prefix")
+set(build_dir "@CMAKE_CURRENT_BINARY_DIR@/consumer-build")
+
+file(REMOVE_RECURSE "${prefix}" "${build_dir}")
+execute_process(
+  COMMAND "@CMAKE_COMMAND@" --install "@CMAKE_BINARY_DIR@" --prefix "${prefix}"
+  COMMAND_ERROR_IS_FATAL ANY
+)
+execute_process(
+  COMMAND "@CMAKE_COMMAND@" -S "@CMAKE_CURRENT_SOURCE_DIR@/consumer" -B "${build_dir}"
+          "-DCMAKE_PREFIX_PATH=${prefix}"
+  COMMAND_ERROR_IS_FATAL ANY
+)
+execute_process(
+  COMMAND "@CMAKE_COMMAND@" --build "${build_dir}"
+  COMMAND_ERROR_IS_FATAL ANY
+)
+execute_process(
+  COMMAND "${build_dir}/consumer"
+  COMMAND_ERROR_IS_FATAL ANY
+)

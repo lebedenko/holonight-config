@@ -2,8 +2,8 @@
 
 **Initiative:** ACF-003
 **Date:** 2026-08-07
-**Status:** Proposed
-**Upstream baseline:** `a4db5d806f3058683c40845efcfebed7446dbc5b`
+**Status:** Implemented
+**Upstream baseline:** `c0e4aa2dd38906684848fde0ba9eef325eb47b8b`
 
 ## Goal
 
