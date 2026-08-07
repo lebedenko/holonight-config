@@ -1,10 +1,9 @@
 #include "test.h"
 
-#include <holonight/config/codec.h>
-#include <holonight/config/test_support.h>
-
 #include <algorithm>
 #include <cmath>
+#include <holonight/config/codec.h>
+#include <holonight/config/test_support.h>
 
 using namespace HoloNight::Config;
 
@@ -47,8 +46,7 @@ TEST_CASE(complete_document_round_trips_unicode_and_optional_shapes) {
   value.shape.style = ShapeStyle::Chamfered;
   value.shape.base_radius = 8.5;
   value.shape.base_chamfer = 12.0;
-  const auto parsed =
-      parse(TestSupport::validDocument(value), "roundtrip.toml");
+  const auto parsed = parse(TestSupport::validDocument(value), "roundtrip.toml");
   EXPECT_TRUE(parsed);
   EXPECT_EQ(*parsed.value, value);
 }
@@ -56,16 +54,14 @@ TEST_CASE(complete_document_round_trips_unicode_and_optional_shapes) {
 TEST_CASE(parser_trims_string_values) {
   std::string document = TestSupport::validDocument();
   const auto offset = document.find("scheme = \"holonight-dark\"");
-  document.replace(offset, std::string{"scheme = \"holonight-dark\""}.size(),
-                   "scheme = \"  holonight-dark  \"");
+  document.replace(offset, std::string{"scheme = \"holonight-dark\""}.size(), "scheme = \"  holonight-dark  \"");
   const auto parsed = parse(document);
   EXPECT_TRUE(parsed);
   EXPECT_EQ(parsed.value->theme.scheme, "holonight-dark");
 }
 
 TEST_CASE(parser_rejects_unknown_and_missing_fields) {
-  const auto unknown =
-      parse(TestSupport::documentWithUnknownField(), "unknown.toml");
+  const auto unknown = parse(TestSupport::documentWithUnknownField(), "unknown.toml");
   EXPECT_FALSE(unknown);
   EXPECT_EQ(unknown.diagnostics.front().code, ErrorCode::ValidationError);
   EXPECT_TRUE(unknown.diagnostics.front().position.has_value());
@@ -89,14 +85,10 @@ TEST_CASE(parser_rejects_wrong_types_duplicates_versions_and_malformed_toml) {
   version.replace(0, std::string{"version = 1"}.size(), "version = 2");
   const auto unsupported = parse(version);
   EXPECT_FALSE(unsupported);
-  EXPECT_TRUE(std::any_of(unsupported.diagnostics.begin(),
-                          unsupported.diagnostics.end(),
-                          [](const Diagnostic &item) {
-                            return item.code == ErrorCode::UnsupportedVersion;
-                          }));
+  EXPECT_TRUE(std::ranges::any_of(unsupported.diagnostics,
+                                  [](const Diagnostic& item) { return item.code == ErrorCode::UnsupportedVersion; }));
 
-  EXPECT_EQ(parse("not = [valid").diagnostics.front().code,
-            ErrorCode::SyntaxError);
+  EXPECT_EQ(parse("not = [valid").diagnostics.front().code, ErrorCode::SyntaxError);
 }
 
 TEST_CASE(parser_rejects_oversized_input_before_toml_parsing) {

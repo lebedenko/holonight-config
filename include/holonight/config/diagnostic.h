@@ -24,7 +24,7 @@ struct SourcePosition {
   std::size_t line{};
   std::size_t column{};
 
-  bool operator==(const SourcePosition &) const = default;
+  bool operator==(const SourcePosition&) const = default;
 };
 
 struct Diagnostic {
@@ -34,7 +34,7 @@ struct Diagnostic {
   std::optional<std::filesystem::path> path;
   std::optional<SourcePosition> position;
 
-  bool operator==(const Diagnostic &) const = default;
+  bool operator==(const Diagnostic&) const = default;
 };
 
-} // namespace HoloNight::Config
+}  // namespace HoloNight::Config

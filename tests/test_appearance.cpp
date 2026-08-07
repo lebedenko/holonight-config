@@ -1,8 +1,7 @@
 #include "test.h"
 
-#include <holonight/config/appearance.h>
-
 #include <cmath>
+#include <holonight/config/appearance.h>
 #include <limits>
 
 using namespace HoloNight::Config;
@@ -65,8 +64,7 @@ TEST_CASE(validation_treats_whitespace_only_identifiers_as_empty) {
 }
 
 TEST_CASE(shape_style_names_round_trip) {
-  for (ShapeStyle style : {ShapeStyle::Inherit, ShapeStyle::Hybrid,
-                           ShapeStyle::Rounded, ShapeStyle::Chamfered}) {
+  for (ShapeStyle style : {ShapeStyle::Inherit, ShapeStyle::Hybrid, ShapeStyle::Rounded, ShapeStyle::Chamfered}) {
     EXPECT_EQ(shapeStyleFromName(shapeStyleName(style)), style);
   }
   EXPECT_FALSE(shapeStyleFromName("invalid").has_value());

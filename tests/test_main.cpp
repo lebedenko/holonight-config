@@ -2,11 +2,11 @@
 
 int main() {
   int failures = 0;
-  for (const Test::Case &test : Test::cases()) {
+  for (const Test::Case& test : Test::cases()) {
     try {
       test.function();
       std::cout << "PASS " << test.name << '\n';
-    } catch (const std::exception &error) {
+    } catch (const std::exception& error) {
       ++failures;
       std::cerr << "FAIL " << test.name << ": " << error.what() << '\n';
     }

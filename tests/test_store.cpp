@@ -1,30 +1,27 @@
 #include "test.h"
 
+#include <fstream>
 #include <holonight/config/store.h>
 #include <holonight/config/test_support.h>
-
-#include <fstream>
 
 using namespace HoloNight::Config;
 
 namespace {
 
-std::string readFile(const std::filesystem::path &path) {
+std::string readFile(const std::filesystem::path& path) {
   std::ifstream input{path, std::ios::binary};
-  return {std::istreambuf_iterator<char>{input},
-          std::istreambuf_iterator<char>{}};
+  return {std::istreambuf_iterator<char>{input}, std::istreambuf_iterator<char>{}};
 }
 
-std::size_t temporaryFileCount(const std::filesystem::path &directory) {
+std::size_t temporaryFileCount(const std::filesystem::path& directory) {
   std::size_t count = 0;
-  for (const auto &entry : std::filesystem::directory_iterator{directory}) {
-    if (entry.path().filename().string().find(".appearance.toml.tmp-") == 0)
-      ++count;
+  for (const auto& entry : std::filesystem::directory_iterator{directory}) {
+    if (entry.path().filename().string().starts_with(".appearance.toml.tmp-")) ++count;
   }
   return count;
 }
 
-} // namespace
+}  // namespace
 
 TEST_CASE(missing_load_returns_defaults_without_creating_file) {
   TestSupport::TemporaryDirectory directory;
@@ -61,8 +58,7 @@ TEST_CASE(atomic_write_replaces_existing_document) {
   EXPECT_EQ(load(path).value->appearance, replacement);
 }
 
-TEST_CASE(
-    validation_failure_preserves_existing_destination_and_leaves_no_temporary_file) {
+TEST_CASE(validation_failure_preserves_existing_destination_and_leaves_no_temporary_file) {
   TestSupport::TemporaryDirectory directory;
   const auto path = directory.child("appearance.toml");
   EXPECT_TRUE(writeAtomically(defaults(), path));
@@ -87,8 +83,7 @@ TEST_CASE(load_rejects_present_invalid_and_oversized_documents) {
   TestSupport::TemporaryDirectory directory;
   const auto invalid_path = directory.child("invalid.toml");
   std::ofstream{invalid_path} << "invalid = [";
-  EXPECT_EQ(load(invalid_path).diagnostics.front().code,
-            ErrorCode::SyntaxError);
+  EXPECT_EQ(load(invalid_path).diagnostics.front().code, ErrorCode::SyntaxError);
 
   const auto large_path = directory.child("large.toml");
   std::ofstream output{large_path, std::ios::binary};
@@ -97,8 +92,7 @@ TEST_CASE(load_rejects_present_invalid_and_oversized_documents) {
   EXPECT_EQ(load(large_path).diagnostics.front().code, ErrorCode::TooLarge);
 }
 
-TEST_CASE(
-    environment_load_uses_injected_path_without_mutating_process_environment) {
+TEST_CASE(environment_load_uses_injected_path_without_mutating_process_environment) {
   TestSupport::TemporaryDirectory directory;
   const Environment environment = TestSupport::environmentFor(directory.path());
   const auto expected = directory.child("holonight/appearance.toml");

@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install --yes libtomlplusplus-dev ninja-build
+
+      - name: Configure
+        run: cmake --preset debug-tests
+
+      - name: Build
+        run: cmake --build --preset debug-tests --parallel
+
+      - name: Test
+        run: ctest --preset debug-tests
+
+  static-checks:
+    name: Static checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install --yes clang-format clang-tidy libtomlplusplus-dev ninja-build
+
+      - name: Configure
+        run: cmake --preset debug-tests
+
+      - name: Format check
+        run: cmake --build build --target format-check
+
+      - name: Clang tidy
+        run: cmake --build build --target tidy

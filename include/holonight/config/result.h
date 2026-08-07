@@ -8,15 +8,15 @@
 
 namespace HoloNight::Config {
 
-template <typename T> struct Result {
+template <typename T>
+struct Result {
   std::optional<T> value;
   std::vector<Diagnostic> diagnostics;
 
   [[nodiscard]] bool hasValue() const noexcept { return value.has_value(); }
   [[nodiscard]] explicit operator bool() const noexcept { return hasValue(); }
 
-  [[nodiscard]] static Result success(T result,
-                                      std::vector<Diagnostic> notes = {}) {
+  [[nodiscard]] static Result success(T result, std::vector<Diagnostic> notes = {}) {
     return Result{.value = std::move(result), .diagnostics = std::move(notes)};
   }
 
@@ -25,4 +25,4 @@ template <typename T> struct Result {
   }
 };
 
-} // namespace HoloNight::Config
+}  // namespace HoloNight::Config

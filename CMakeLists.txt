@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.25)
 
 project(HoloNightConfig VERSION 0.1.0 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -64,6 +68,9 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/HoloNightConfigConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/HoloNightConfig
 )
+install(FILES LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/HoloNightConfig
+)
 
 if(BUILD_TESTING)
     enable_testing()
@@ -85,7 +92,7 @@ endif()
 find_program(CLANG_FORMAT clang-format)
 if(CLANG_FORMAT)
     file(GLOB_RECURSE HOLONIGHT_CONFIG_FORMAT_FILES CONFIGURE_DEPENDS
-        include/*.h src/*.cpp tests/*.cpp)
+        include/*.h src/*.cpp tests/*.cpp tests/*.h)
     add_custom_target(format
         COMMAND ${CLANG_FORMAT} -i ${HOLONIGHT_CONFIG_FORMAT_FILES}
         VERBATIM
@@ -94,4 +101,37 @@ if(CLANG_FORMAT)
         COMMAND ${CLANG_FORMAT} --dry-run --Werror ${HOLONIGHT_CONFIG_FORMAT_FILES}
         VERBATIM
     )
+endif()
+
+find_program(CLANG_TIDY clang-tidy)
+if(CLANG_TIDY)
+    set(HOLONIGHT_CONFIG_TIDY_SOURCES
+        src/appearance.cpp
+        src/codec.cpp
+        src/path.cpp
+        src/store.cpp
+    )
+    add_custom_target(tidy-src
+        COMMAND ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR} ${HOLONIGHT_CONFIG_TIDY_SOURCES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        VERBATIM
+    )
+    if(BUILD_TESTING)
+        set(HOLONIGHT_CONFIG_TIDY_TEST_SOURCES
+            src/test_support.cpp
+            tests/test_appearance.cpp
+            tests/test_codec.cpp
+            tests/test_main.cpp
+            tests/test_path.cpp
+            tests/test_store.cpp
+        )
+        add_custom_target(tidy-tests
+            COMMAND ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR} ${HOLONIGHT_CONFIG_TIDY_TEST_SOURCES}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            VERBATIM
+        )
+        add_custom_target(tidy DEPENDS tidy-src tidy-tests)
+    else()
+        add_custom_target(tidy DEPENDS tidy-src)
+    endif()
 endif()

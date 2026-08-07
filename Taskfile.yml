@@ -1,0 +1,69 @@
+version: "3"
+
+tasks:
+  configure:
+    desc: Configure a debug build
+    cmds:
+      - cmake --preset debug
+      - cmake -E create_symlink build/compile_commands.json compile_commands.json
+
+  configure-tests:
+    desc: Configure a debug build with tests
+    cmds:
+      - cmake --preset debug-tests
+      - cmake -E create_symlink build/compile_commands.json compile_commands.json
+
+  build:
+    desc: Build the library
+    deps: [configure]
+    cmds:
+      - cmake --build --preset debug --parallel
+
+  test:
+    desc: Build and run all tests, including the installed-package consumer
+    deps: [configure-tests]
+    cmds:
+      - cmake --build --preset debug-tests --parallel
+      - ctest --preset debug-tests
+
+  format:
+    desc: Format C++ sources
+    deps: [configure]
+    cmds:
+      - cmake --build build --target format
+
+  format-check:
+    desc: Check C++ source formatting
+    deps: [configure]
+    cmds:
+      - cmake --build build --target format-check
+
+  tidy:
+    desc: Run clang-tidy on production and test sources
+    deps: [configure-tests]
+    cmds:
+      - cmake --build build --target tidy
+
+  tidy-src:
+    desc: Run clang-tidy on production sources
+    deps: [configure-tests]
+    cmds:
+      - cmake --build build --target tidy-src
+
+  tidy-tests:
+    desc: Run clang-tidy on test sources
+    deps: [configure-tests]
+    cmds:
+      - cmake --build build --target tidy-tests
+
+  install:
+    desc: Build and install below ~/.local
+    deps: [build]
+    cmds:
+      - cmake --install build --prefix "$HOME/.local"
+
+  clean:
+    desc: Remove the local build directory
+    prompt: Remove build/ entirely?
+    cmds:
+      - cmake -E rm -rf build

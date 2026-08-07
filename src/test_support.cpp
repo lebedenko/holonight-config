@@ -10,13 +10,11 @@
 namespace HoloNight::Config::TestSupport {
 
 TemporaryDirectory::TemporaryDirectory() {
-  std::filesystem::path pattern =
-      std::filesystem::temp_directory_path() / "holonight-config-XXXXXX";
+  std::filesystem::path pattern = std::filesystem::temp_directory_path() / "holonight-config-XXXXXX";
   std::string writable = pattern.string();
   writable.push_back('\0');
-  char *created = ::mkdtemp(writable.data());
-  if (created == nullptr)
-    throw std::runtime_error{"failed to create temporary directory"};
+  char* created = ::mkdtemp(writable.data());
+  if (created == nullptr) throw std::runtime_error{"failed to create temporary directory"};
   path_ = created;
 }
 
@@ -25,15 +23,13 @@ TemporaryDirectory::~TemporaryDirectory() {
   std::filesystem::remove_all(path_, ignored);
 }
 
-std::filesystem::path
-TemporaryDirectory::child(std::string_view relative) const {
+std::filesystem::path TemporaryDirectory::child(std::string_view relative) const {
   return path_ / std::filesystem::path{relative};
 }
 
-std::string validDocument(const Appearance &appearance) {
+std::string validDocument(const Appearance& appearance) {
   Result<std::string> result = serialize(appearance);
-  if (!result)
-    throw std::logic_error{"test fixture appearance is invalid"};
+  if (!result) throw std::logic_error{"test fixture appearance is invalid"};
   return std::move(*result.value);
 }
 
@@ -43,8 +39,8 @@ std::string documentWithUnknownField() {
   return document;
 }
 
-Environment environmentFor(const std::filesystem::path &config_home) {
+Environment environmentFor(const std::filesystem::path& config_home) {
   return Environment{{"XDG_CONFIG_HOME", config_home.string()}};
 }
 
-} // namespace HoloNight::Config::TestSupport
+}  // namespace HoloNight::Config::TestSupport

@@ -15,6 +15,9 @@ ctest --test-dir build --output-on-failure
 cmake --install build --prefix /desired/prefix
 ```
 
+For local development, [Task](https://taskfile.dev/) provides the same entry points used during CI-oriented checks:
+`task build`, `task test`, `task format-check`, and `task tidy`.
+
 An installed consumer uses the single supported production target:
 
 ```cmake
@@ -52,3 +55,7 @@ it does not promise directory-entry durability across sudden power loss because 
 
 The detailed accepted contract and design rationale live in the
 [Appearance Configuration Foundation SDD](docs/sdd/appearance-configuration-foundation/SPEC.md).
+
+## License
+
+HoloNight Config is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).

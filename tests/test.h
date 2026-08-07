@@ -30,13 +30,13 @@ inline void fail(const char* expression, const char* file, int line) {
 
 }  // namespace Test
 
-#define TEST_CASE(name)                 \
-  static void name();                   \
+#define TEST_CASE(name)                                \
+  static void name();                                  \
   static Test::Register name##_register{#name, &name}; \
   static void name()
 
-#define EXPECT_TRUE(expression)           \
-  do {                                    \
+#define EXPECT_TRUE(expression)                                     \
+  do {                                                              \
     if (!(expression)) Test::fail(#expression, __FILE__, __LINE__); \
   } while (false)
 

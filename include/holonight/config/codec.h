@@ -9,8 +9,7 @@
 
 namespace HoloNight::Config {
 
-[[nodiscard]] Result<Appearance>
-parse(std::string_view document, const std::filesystem::path &source_path = {});
-[[nodiscard]] Result<std::string> serialize(const Appearance &appearance);
+[[nodiscard]] Result<Appearance> parse(std::string_view document, const std::filesystem::path& source_path = {});
+[[nodiscard]] Result<std::string> serialize(const Appearance& appearance);
 
-} // namespace HoloNight::Config
+}  // namespace HoloNight::Config
