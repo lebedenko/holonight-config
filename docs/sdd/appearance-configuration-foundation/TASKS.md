@@ -14,7 +14,7 @@ Implementation started after umbrella ACF-003 became `Ready`, on published basel
 - [x] ACF3-08: Add isolated consumer test helpers without implicit environment mutation.
 - [x] ACF3-09: Document public API, schema evolution, platform guarantees, dependency provisioning, and downstream
   integration.
-- [ ] ACF3-10: Run formatting, warnings-as-errors build, unit tests, install test, and package-consumer test; publish
+- [x] ACF3-10: Run formatting, warnings-as-errors build, unit tests, install test, and package-consumer test; publish
   the verified commit for the umbrella handoff.
 
 ## Completion evidence
@@ -30,4 +30,7 @@ Local verification on 2026-08-07:
 - `./build/tests/holonight_config_tests` — 25/25 focused schema, codec, path, store, and helper tests passed.
 - `ctest --test-dir build --output-on-failure` — 2/2 CTest entries passed, including install-tree external consumer.
 - `cmake --build build --target format-check` and `git diff --check` — passed.
-- Publication and the exact published implementation commit remain pending; ACF3-10 is intentionally unchecked.
+- `task test`, `task format-check`, and `task tidy` — passed after adopting the repository tooling configuration.
+- Published implementation commit: `acb9a457ee04de9a8ea45a6a0a674a16b7f8be4c`.
+- GitHub Actions workflow `CI` passed for the published implementation commit on 2026-08-07, covering the build,
+  unit/install-tree consumer tests, formatting, and clang-tidy jobs.
