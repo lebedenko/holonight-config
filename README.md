@@ -58,4 +58,4 @@ The detailed accepted contract and design rationale live in the
 
 ## License
 
-HoloNight Config is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
+HoloNight Config is licensed under `GPL-3.0-or-later`. See [LICENSE](LICENSE).

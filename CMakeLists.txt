@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(GNUInstallDirs)
+install(FILES LICENSE LICENSES/GPL-3.0-or-later.txt
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}")
 include(CMakePackageConfigHelpers)
 
 option(BUILD_TESTING "Build tests" OFF)
