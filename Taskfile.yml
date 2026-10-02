@@ -1,5 +1,9 @@
 version: '3'
 tasks:
+  ci:
+    desc: Rehearse push validation with isolated container builds
+    cmds:
+    - python3 scripts/ci/run.py
   license-check:
     desc: Validate REUSE licensing metadata
     cmds:

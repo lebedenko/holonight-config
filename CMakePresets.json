@@ -12,8 +12,7 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_INSTALL_PREFIX": "/usr",
         "CMAKE_INSTALL_LIBDIR": "lib",
-        "CMAKE_PREFIX_PATH": "${sourceDir}/build/deps/prefix",
-        "QML_IMPORT_PATH": "${sourceDir}/build/deps/prefix/lib/qt6/qml"
+        "CMAKE_PREFIX_PATH": "${sourceDir}/build/deps/prefix"
       }
     },
     {
@@ -30,7 +29,6 @@
         "CMAKE_INSTALL_PREFIX": "/usr",
         "CMAKE_INSTALL_LIBDIR": "lib",
         "CMAKE_PREFIX_PATH": "${sourceDir}/build/deps/prefix",
-        "QML_IMPORT_PATH": "${sourceDir}/build/deps/prefix/lib/qt6/qml",
         "BUILD_TESTING": "ON"
       }
     },
@@ -44,7 +42,6 @@
         "CMAKE_INSTALL_PREFIX": "/usr",
         "CMAKE_INSTALL_LIBDIR": "lib",
         "CMAKE_PREFIX_PATH": "${sourceDir}/build/deps/prefix",
-        "QML_IMPORT_PATH": "${sourceDir}/build/deps/prefix/lib/qt6/qml",
         "BUILD_TESTING": "OFF"
       }
     }

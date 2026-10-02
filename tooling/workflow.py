@@ -117,8 +117,9 @@ def prepare(config):
 
 def configure(config, preset):
     prepare(config)
-    args = ['cmake', '--preset', preset, f'-DCMAKE_PREFIX_PATH={prefix()}',
-            f'-DQML_IMPORT_PATH={prefix() / "lib/qt6/qml"}']
+    args = ['cmake', '--preset', preset, f'-DCMAKE_PREFIX_PATH={prefix()}']
+    if config.get('qml'):
+        args.append(f'-DQML_IMPORT_PATH={prefix() / "lib/qt6/qml"}')
     if os.environ.get('QMLLINT'):
         args.append('-DQMLLINT=' + os.environ['QMLLINT'])
     if config.get('module') == 'holonight-qt':

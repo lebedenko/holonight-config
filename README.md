@@ -64,3 +64,22 @@ HoloNight Config is licensed under `GPL-3.0-or-later`. See [LICENSE](LICENSE).
 
 See [tooling/README.md](tooling/README.md) for presets, local dependency overrides, editor refresh,
 `task tooling:doctor`, and the independent Serena project.
+
+## Local push validation
+
+Run `task ci` with Git, Python 3, Task and an accessible Docker daemon; Podman is
+used when Docker is absent. The immutable linux/amd64 build image supplies the
+compiler, CMake, Ninja, clang tools and tomlplusplus. Other architectures require
+configured amd64 emulation. REUSE licensing runs in its pinned 6.2.0 image.
+
+Current tracked edits and non-ignored new files enter a read-only snapshot; deleted
+and ignored files are omitted. New inputs are reported to add before pushing. Each
+build/test, format/full tidy, and licensing lane gets its own disposable writable
+copy. Development builds stay untouched and application artifacts are never reused.
+Container-layer caches remain usable. GitHub CI uses these same scripts and images.
+
+Complete logs, revision/dirty status, image identities, tool versions and lane exit
+codes live under ignored `build/ci/<run>/`. Failed logs also print to the console.
+Any required failure makes the task fail. For focused diagnosis use
+`python3 scripts/ci/run.py --lane static-checks`. Run launcher regressions with
+`python3 scripts/ci/test_launcher.py`. Releases/publication remain remote operations.
