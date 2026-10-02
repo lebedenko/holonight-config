@@ -42,3 +42,9 @@ Snapshot isolation preserved hashes, modes and timestamps of 143 tracked source 
 development-build files (`build/ci/20261002T191535Z-juy59w0d/`). Complete logs
 were reviewed; no actionable diagnostics remain. Host evidence: build/ci/host-format.log,
 build/ci/host-tidy.log and build/ci/host-test.log. No public contracts or provider pins change.
+
+
+Rootless Podman uses `--userns=keep-id` so preserved private file modes remain
+readable under the requested UID/GID. A fake-runtime launcher regression verifies
+user mapping and the read-only input mount. Podman is not installed on this host;
+its real-runtime integration is unverified. The verified Docker path is unchanged.
