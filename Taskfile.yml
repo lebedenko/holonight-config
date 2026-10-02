@@ -1,73 +1,94 @@
-version: "3"
-
+version: '3'
 tasks:
   license-check:
     desc: Validate REUSE licensing metadata
-    cmds: [reuse lint]
-
+    cmds:
+    - reuse lint
   configure:
-    desc: Configure a debug build
+    desc: configure using standalone tooling
     cmds:
-      - cmake --preset debug
-      - cmake -E create_symlink build/compile_commands.json compile_commands.json
-
+    - python3 tooling/workflow.py configure --preset {{.PRESET}}
   configure-tests:
-    desc: Configure a debug build with tests
+    desc: configure using standalone tooling
     cmds:
-      - cmake --preset debug-tests
-      - cmake -E create_symlink build/compile_commands.json compile_commands.json
-
+    - python3 tooling/workflow.py configure --preset test
   build:
-    desc: Build the library
-    deps: [configure]
+    desc: build using standalone tooling
     cmds:
-      - cmake --build --preset debug --parallel
-
+    - python3 tooling/workflow.py build --preset {{.PRESET}}
   test:
-    desc: Build and run all tests, including the installed-package consumer
-    deps: [configure-tests]
+    desc: test using standalone tooling
     cmds:
-      - cmake --build --preset debug-tests --parallel
-      - ctest --preset debug-tests
-
+    - python3 tooling/workflow.py test --preset {{.PRESET}}
   format:
-    desc: Format C++ sources
-    deps: [configure]
+    desc: format using standalone tooling
     cmds:
-      - cmake --build build --target format
-
+    - python3 tooling/workflow.py format
   format-check:
-    desc: Check C++ source formatting
-    deps: [configure]
+    desc: format-check using standalone tooling
     cmds:
-      - cmake --build build --target format-check
-
+    - python3 tooling/workflow.py format-check
   tidy:
-    desc: Run clang-tidy on production and test sources
-    deps: [configure-tests]
+    desc: tidy using standalone tooling
     cmds:
-      - cmake --build build --target tidy
-
+    - python3 tooling/workflow.py tidy --scope all
   tidy-src:
-    desc: Run clang-tidy on production sources
-    deps: [configure-tests]
+    desc: tidy using standalone tooling
     cmds:
-      - cmake --build build --target tidy-src
-
+    - python3 tooling/workflow.py tidy --scope src
   tidy-tests:
-    desc: Run clang-tidy on test sources
-    deps: [configure-tests]
+    desc: tidy using standalone tooling
     cmds:
-      - cmake --build build --target tidy-tests
-
+    - python3 tooling/workflow.py tidy --scope tests
   install:
     desc: Build and install below ~/.local
-    deps: [build]
+    deps:
+    - build
     cmds:
-      - cmake --install build --prefix "$HOME/.local"
-
+    - cmake --install build/debug --prefix "$HOME/.local"
   clean:
     desc: Remove the local build directory
     prompt: Remove build/ entirely?
     cmds:
-      - cmake -E rm -rf build
+    - cmake -E rm -rf build
+  tooling:doctor:
+    desc: doctor using standalone tooling
+    cmds:
+    - python3 tooling/workflow.py doctor
+  tooling:refresh:
+    desc: refresh using standalone tooling
+    cmds:
+    - python3 tooling/workflow.py refresh --preset {{default "test" .EDITOR_PRESET}}
+  serena:serve:
+    desc: Start independent Serena server in codex context
+    cmds:
+    - serena start-mcp-server --project "{{.TASKFILE_DIR}}" --context codex
+  serena:index:
+    desc: Explicitly index this module
+    cmds:
+    - serena project index "{{.TASKFILE_DIR}}"
+  deps:
+    desc: deps using standalone tooling
+    cmds:
+    - python3 tooling/workflow.py deps --preset {{.PRESET}}
+  configure:release:
+    desc: configure using standalone tooling
+    cmds:
+    - python3 tooling/workflow.py configure --preset release
+  build:release:
+    desc: build using standalone tooling
+    cmds:
+    - python3 tooling/workflow.py build --preset release
+  lint:
+    desc: Run applicable static checks
+    cmds:
+    - task: tidy
+  check:
+    desc: Run build, tests and static checks
+    cmds:
+    - task: build
+    - task: test
+    - task: format-check
+    - task: lint
+vars:
+  PRESET: '{{default "debug" .PRESET}}'

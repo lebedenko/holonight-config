@@ -10,8 +10,8 @@ discovery is local and never downloads packages.
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake --build build/debug
+ctest --test-dir build/test --output-on-failure
 cmake --install build --prefix /desired/prefix
 ```
 
@@ -59,3 +59,8 @@ The detailed accepted contract and design rationale live in the
 ## License
 
 HoloNight Config is licensed under `GPL-3.0-or-later`. See [LICENSE](LICENSE).
+
+## Standalone developer tooling
+
+See [tooling/README.md](tooling/README.md) for presets, local dependency overrides, editor refresh,
+`task tooling:doctor`, and the independent Serena project.
