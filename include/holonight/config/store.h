@@ -8,7 +8,9 @@
 
 namespace HoloNight::Config {
 
-enum class LoadOrigin { File, Default };
+// Preserve the existing public ABI; narrowing this enum changes shared-library layouts.
+// NOLINTNEXTLINE(performance-enum-size)
+enum class LoadOrigin : int { File, Default };
 
 struct LoadedAppearance {
   Appearance appearance;

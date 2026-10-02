@@ -16,7 +16,9 @@ std::string readFile(const std::filesystem::path& path) {
 std::size_t temporaryFileCount(const std::filesystem::path& directory) {
   std::size_t count = 0;
   for (const auto& entry : std::filesystem::directory_iterator{directory}) {
-    if (entry.path().filename().string().starts_with(".appearance.toml.tmp-")) ++count;
+    if (entry.path().filename().string().starts_with(".appearance.toml.tmp-")) {
+      ++count;
+    }
   }
   return count;
 }

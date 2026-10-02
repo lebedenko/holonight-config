@@ -39,14 +39,17 @@ Result<std::filesystem::path> resolveAppearancePath(const Environment& environme
     return Result<std::filesystem::path>::success(std::filesystem::path{std::move(home)} / ".config" / "holonight" /
                                                   "appearance.toml");
   }
-  return Result<std::filesystem::path>::failure(
-      {Diagnostic{.code = ErrorCode::PathUnavailable,
-                  .severity = Severity::Error,
-                  .message = "cannot resolve appearance path: HOLONIGHT_APPEARANCE_FILE, "
-                             "XDG_CONFIG_HOME, and HOME "
-                             "are empty",
-                  .path = std::nullopt,
-                  .position = std::nullopt}});
+  return Result<std::filesystem::path>::failure({
+      Diagnostic{
+          .code = ErrorCode::PathUnavailable,
+          .severity = Severity::Error,
+          .message = "cannot resolve appearance path: HOLONIGHT_APPEARANCE_FILE, "
+                     "XDG_CONFIG_HOME, and HOME "
+                     "are empty",
+          .path = std::nullopt,
+          .position = std::nullopt,
+      },
+  });
 }
 
 Result<std::filesystem::path> resolveAppearancePath() { return resolveAppearancePath(processEnvironment()); }

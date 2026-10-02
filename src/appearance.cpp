@@ -18,11 +18,13 @@ constexpr double kMaximumShapeScale = 4.0;
 constexpr double kMaximumShapeExtent = 128.0;
 
 void addError(std::vector<Diagnostic>& diagnostics, std::string message) {
-  diagnostics.push_back(Diagnostic{.code = ErrorCode::ValidationError,
-                                   .severity = Severity::Error,
-                                   .message = std::move(message),
-                                   .path = std::nullopt,
-                                   .position = std::nullopt});
+  diagnostics.push_back(Diagnostic{
+      .code = ErrorCode::ValidationError,
+      .severity = Severity::Error,
+      .message = std::move(message),
+      .path = std::nullopt,
+      .position = std::nullopt,
+  });
 }
 
 std::string trim(std::string value) {
@@ -54,10 +56,14 @@ bool isValidUtf8(std::string_view value) {
     } else {
       return false;
     }
-    if (index + length > value.size()) return false;
+    if (index + length > value.size()) {
+      return false;
+    }
     for (std::size_t offset = 1; offset < length; ++offset) {
       const auto continuation = static_cast<unsigned char>(value[index + offset]);
-      if ((continuation & 0xC0U) != 0x80U) return false;
+      if ((continuation & 0xC0U) != 0x80U) {
+        return false;
+      }
       code_point = (code_point << 6U) | (continuation & 0x3FU);
     }
     if ((length == 2 && code_point < 0x80U) || (length == 3 && code_point < 0x800U) ||
@@ -115,11 +121,13 @@ std::vector<Diagnostic> validate(const Appearance& appearance) {
   const Appearance canonical = normalized(appearance);
   std::vector<Diagnostic> diagnostics;
   if (canonical.version != kDocumentVersion) {
-    diagnostics.push_back(Diagnostic{.code = ErrorCode::UnsupportedVersion,
-                                     .severity = Severity::Error,
-                                     .message = "version must be exactly 1",
-                                     .path = std::nullopt,
-                                     .position = std::nullopt});
+    diagnostics.push_back(Diagnostic{
+        .code = ErrorCode::UnsupportedVersion,
+        .severity = Severity::Error,
+        .message = "version must be exactly 1",
+        .path = std::nullopt,
+        .position = std::nullopt,
+    });
   }
 
   validateIdentifier(diagnostics, "theme.scheme", canonical.theme.scheme, 128);
@@ -161,10 +169,18 @@ std::string_view shapeStyleName(ShapeStyle style) noexcept {
 }
 
 std::optional<ShapeStyle> shapeStyleFromName(std::string_view name) noexcept {
-  if (name == "inherit") return ShapeStyle::Inherit;
-  if (name == "hybrid") return ShapeStyle::Hybrid;
-  if (name == "rounded") return ShapeStyle::Rounded;
-  if (name == "chamfered") return ShapeStyle::Chamfered;
+  if (name == "inherit") {
+    return ShapeStyle::Inherit;
+  }
+  if (name == "hybrid") {
+    return ShapeStyle::Hybrid;
+  }
+  if (name == "rounded") {
+    return ShapeStyle::Rounded;
+  }
+  if (name == "chamfered") {
+    return ShapeStyle::Chamfered;
+  }
   return std::nullopt;
 }
 

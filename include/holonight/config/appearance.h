@@ -13,7 +13,9 @@ namespace HoloNight::Config {
 inline constexpr std::int64_t kDocumentVersion = 1;
 inline constexpr std::size_t kMaximumDocumentBytes = 64U * 1024U;
 
-enum class ShapeStyle { Inherit, Hybrid, Rounded, Chamfered };
+// Preserve the existing public ABI; narrowing this enum changes shared-library layouts.
+// NOLINTNEXTLINE(performance-enum-size)
+enum class ShapeStyle : int { Inherit, Hybrid, Rounded, Chamfered };
 
 struct Theme {
   std::string scheme{"holonight-dark"};

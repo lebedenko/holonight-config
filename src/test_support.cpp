@@ -14,7 +14,9 @@ TemporaryDirectory::TemporaryDirectory() {
   std::string writable = pattern.string();
   writable.push_back('\0');
   char* created = ::mkdtemp(writable.data());
-  if (created == nullptr) throw std::runtime_error{"failed to create temporary directory"};
+  if (created == nullptr) {
+    throw std::runtime_error{"failed to create temporary directory"};
+  }
   path_ = created;
 }
 
@@ -29,7 +31,9 @@ std::filesystem::path TemporaryDirectory::child(std::string_view relative) const
 
 std::string validDocument(const Appearance& appearance) {
   Result<std::string> result = serialize(appearance);
-  if (!result) throw std::logic_error{"test fixture appearance is invalid"};
+  if (!result) {
+    throw std::logic_error{"test fixture appearance is invalid"};
+  }
   return std::move(*result.value);
 }
 

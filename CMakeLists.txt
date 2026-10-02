@@ -124,8 +124,10 @@ if(CLANG_TIDY)
             tests/test_appearance.cpp
             tests/test_codec.cpp
             tests/test_main.cpp
+            tests/test_assertions.cpp
             tests/test_path.cpp
             tests/test_store.cpp
+            tests/consumer/main.cpp
         )
         add_custom_target(tidy-tests
             COMMAND ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR} ${HOLONIGHT_CONFIG_TIDY_TEST_SOURCES}

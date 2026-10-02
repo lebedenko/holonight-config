@@ -18,7 +18,12 @@ namespace {
 
 Diagnostic fileDiagnostic(ErrorCode code, std::string message, const std::filesystem::path& path) {
   return Diagnostic{
-      .code = code, .severity = Severity::Error, .message = std::move(message), .path = path, .position = std::nullopt};
+      .code = code,
+      .severity = Severity::Error,
+      .message = std::move(message),
+      .path = path,
+      .position = std::nullopt,
+  };
 }
 
 std::string systemMessage(std::string_view operation, int error_number) {
@@ -29,7 +34,9 @@ class TemporaryFile {
  public:
   TemporaryFile() = default;
   ~TemporaryFile() {
-    if (descriptor_ >= 0) ::close(descriptor_);
+    if (descriptor_ >= 0) {
+      ::close(descriptor_);
+    }
     if (!path_.empty()) {
       std::error_code ignored;
       std::filesystem::remove(path_, ignored);
@@ -55,9 +62,11 @@ class TemporaryFile {
   [[nodiscard]] bool writeAll(std::string_view contents, int* error_number) const {
     std::size_t offset = 0;
     while (offset < contents.size()) {
-      const ssize_t written = ::write(descriptor_, contents.data() + offset, contents.size() - offset);
+      const ssize_t written = ::write(descriptor_, contents.substr(offset).data(), contents.size() - offset);
       if (written < 0) {
-        if (errno == EINTR) continue;
+        if (errno == EINTR) {
+          continue;
+        }
         *error_number = errno;
         return false;
       }
@@ -94,16 +103,21 @@ Result<LoadedAppearance> load(const std::filesystem::path& path) {
   std::error_code filesystem_error;
   if (!std::filesystem::exists(path, filesystem_error)) {
     if (filesystem_error) {
-      return Result<LoadedAppearance>::failure({fileDiagnostic(
-          ErrorCode::IoError, "failed to inspect appearance file: " + filesystem_error.message(), path)});
+      return Result<LoadedAppearance>::failure({
+          fileDiagnostic(ErrorCode::IoError, "failed to inspect appearance file: " + filesystem_error.message(), path),
+      });
     }
     return Result<LoadedAppearance>::success(
         LoadedAppearance{.appearance = defaults(), .origin = LoadOrigin::Default},
-        {Diagnostic{.code = ErrorCode::Missing,
-                    .severity = Severity::Info,
-                    .message = "appearance file is missing; shared defaults are active",
-                    .path = path,
-                    .position = std::nullopt}});
+        {
+            Diagnostic{
+                .code = ErrorCode::Missing,
+                .severity = Severity::Info,
+                .message = "appearance file is missing; shared defaults are active",
+                .path = path,
+                .position = std::nullopt,
+            },
+        });
   }
 
   const std::uintmax_t size = std::filesystem::file_size(path, filesystem_error);
@@ -138,7 +152,9 @@ Result<LoadedAppearance> load(const std::filesystem::path& path) {
   }
 
   Result<Appearance> parsed = parse(document, path);
-  if (!parsed) return Result<LoadedAppearance>::failure(std::move(parsed.diagnostics));
+  if (!parsed) {
+    return Result<LoadedAppearance>::failure(std::move(parsed.diagnostics));
+  }
   return Result<LoadedAppearance>::success(
       LoadedAppearance{.appearance = std::move(*parsed.value), .origin = LoadOrigin::File},
       std::move(parsed.diagnostics));
@@ -146,7 +162,9 @@ Result<LoadedAppearance> load(const std::filesystem::path& path) {
 
 Result<LoadedAppearance> load(const Environment& environment) {
   Result<std::filesystem::path> path = resolveAppearancePath(environment);
-  if (!path) return Result<LoadedAppearance>::failure(std::move(path.diagnostics));
+  if (!path) {
+    return Result<LoadedAppearance>::failure(std::move(path.diagnostics));
+  }
   return load(*path.value);
 }
 
@@ -160,7 +178,9 @@ Result<std::filesystem::path> writeAtomically(const Appearance& appearance, cons
 
   Result<std::string> encoded = serialize(appearance);
   if (!encoded) {
-    for (Diagnostic& item : encoded.diagnostics) item.path = path;
+    for (Diagnostic& item : encoded.diagnostics) {
+      item.path = path;
+    }
     return Result<std::filesystem::path>::failure(std::move(encoded.diagnostics));
   }
 
@@ -168,28 +188,38 @@ Result<std::filesystem::path> writeAtomically(const Appearance& appearance, cons
   std::error_code filesystem_error;
   std::filesystem::create_directories(directory, filesystem_error);
   if (filesystem_error) {
-    return Result<std::filesystem::path>::failure({fileDiagnostic(
-        ErrorCode::AtomicWriteError, "failed to create appearance directory: " + filesystem_error.message(), path)});
+    return Result<std::filesystem::path>::failure({
+        fileDiagnostic(ErrorCode::AtomicWriteError,
+                       "failed to create appearance directory: " + filesystem_error.message(), path),
+    });
   }
 
   int error_number = 0;
   TemporaryFile temporary;
   if (!temporary.create(path, &error_number)) {
-    return Result<std::filesystem::path>::failure({fileDiagnostic(
-        ErrorCode::AtomicWriteError, systemMessage("failed to create temporary file", error_number), path)});
+    return Result<std::filesystem::path>::failure({
+        fileDiagnostic(ErrorCode::AtomicWriteError, systemMessage("failed to create temporary file", error_number),
+                       path),
+    });
   }
   if (!temporary.writeAll(*encoded.value, &error_number)) {
-    return Result<std::filesystem::path>::failure({fileDiagnostic(
-        ErrorCode::AtomicWriteError, systemMessage("failed to write temporary file", error_number), path)});
+    return Result<std::filesystem::path>::failure({
+        fileDiagnostic(ErrorCode::AtomicWriteError, systemMessage("failed to write temporary file", error_number),
+                       path),
+    });
   }
   if (!temporary.flushAndClose(&error_number)) {
-    return Result<std::filesystem::path>::failure({fileDiagnostic(
-        ErrorCode::AtomicWriteError, systemMessage("failed to flush temporary file", error_number), path)});
+    return Result<std::filesystem::path>::failure({
+        fileDiagnostic(ErrorCode::AtomicWriteError, systemMessage("failed to flush temporary file", error_number),
+                       path),
+    });
   }
   if (::rename(temporary.path().c_str(), path.c_str()) != 0) {
     error_number = errno;
-    return Result<std::filesystem::path>::failure({fileDiagnostic(
-        ErrorCode::AtomicWriteError, systemMessage("failed to replace appearance file", error_number), path)});
+    return Result<std::filesystem::path>::failure({
+        fileDiagnostic(ErrorCode::AtomicWriteError, systemMessage("failed to replace appearance file", error_number),
+                       path),
+    });
   }
   temporary.release();
   return Result<std::filesystem::path>::success(path);

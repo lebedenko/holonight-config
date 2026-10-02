@@ -6,7 +6,10 @@ using namespace HoloNight::Config;
 
 TEST_CASE(explicit_path_override_has_highest_precedence) {
   Environment environment{
-      {"HOLONIGHT_APPEARANCE_FILE", "relative.toml"}, {"XDG_CONFIG_HOME", "/xdg"}, {"HOME", "/home"}};
+      {"HOLONIGHT_APPEARANCE_FILE", "relative.toml"},
+      {"XDG_CONFIG_HOME", "/xdg"},
+      {"HOME", "/home"},
+  };
   const auto result = resolveAppearancePath(environment);
   EXPECT_TRUE(result);
   EXPECT_EQ(*result.value, std::filesystem::path{"relative.toml"});

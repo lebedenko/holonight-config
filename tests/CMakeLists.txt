@@ -1,5 +1,6 @@
 add_executable(holonight_config_tests
     test_main.cpp
+    test_assertions.cpp
     test_appearance.cpp
     test_codec.cpp
     test_path.cpp
@@ -12,3 +13,8 @@ add_test(NAME holonight_config_tests COMMAND holonight_config_tests)
 configure_file(consumer_test.cmake.in consumer_test.cmake @ONLY)
 add_test(NAME holonight_config_consumer_test
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/consumer_test.cmake)
+
+# Keep the installed-package probe covered by compile commands and static analysis.
+# Its isolated install/run acceptance remains in holonight_config_consumer_test.
+add_library(holonight_config_consumer_compile OBJECT consumer/main.cpp)
+target_link_libraries(holonight_config_consumer_compile PRIVATE HoloNight::Config)

@@ -7,9 +7,13 @@
 
 namespace HoloNight::Config {
 
-enum class Severity { Info, Error };
+// Preserve the existing public ABI; narrowing this enum changes shared-library layouts.
+// NOLINTNEXTLINE(performance-enum-size)
+enum class Severity : int { Info, Error };
 
-enum class ErrorCode {
+// Preserve the existing public ABI; narrowing this enum changes shared-library layouts.
+// NOLINTNEXTLINE(performance-enum-size)
+enum class ErrorCode : int {
   Missing,
   PathUnavailable,
   IoError,

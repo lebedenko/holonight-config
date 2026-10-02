@@ -17,11 +17,11 @@ struct Result {
   [[nodiscard]] explicit operator bool() const noexcept { return hasValue(); }
 
   [[nodiscard]] static Result success(T result, std::vector<Diagnostic> notes = {}) {
-    return Result{.value = std::move(result), .diagnostics = std::move(notes)};
+    return Result{.value = std::move(result), .diagnostics = std::vector<Diagnostic>{std::move(notes)}};
   }
 
   [[nodiscard]] static Result failure(std::vector<Diagnostic> errors) {
-    return Result{.value = std::nullopt, .diagnostics = std::move(errors)};
+    return Result{.value = std::nullopt, .diagnostics = std::vector<Diagnostic>{std::move(errors)}};
   }
 };
 
