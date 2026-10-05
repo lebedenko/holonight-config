@@ -15,3 +15,10 @@ Verification date: 2026-10-05.
 - `git diff --check`: passed.
 
 This provider acceptance does not imply GUI, Qt watcher, adapter, Shell or ecosystem acceptance. Inline-child/AoT edits and unsupported table insertion layouts fail unchanged. Nonparticipating editors retain the documented final-check/rename race.
+
+## CA-001a
+
+- [x] Reproduce published appearance storage-result misclassification and review rollback gap.
+- [x] Add locked pre-write snapshots without changing the existing SaveResult layout.
+- [x] Verify regression, preservation, storage faults and installed consumer; review full acceptance logs.
+- [ ] Commit, publish and hand off the additive provider revision.

@@ -84,6 +84,13 @@ struct SaveResult {
   std::vector<Diagnostic> diagnostics;
 };
 
+struct StagedSaveResult {
+  SaveResult result;
+  // Exact pre-write bytes captured under the writer lock, including concurrent unrelated changes.
+  // Populated on Success and DurabilityFailure; use for conditional rollback.
+  std::optional<DocumentSnapshot> previous;
+};
+
 [[nodiscard]] Result<DocumentSnapshot> parseDocument(std::string_view bytes, const std::filesystem::path& path = {});
 // Missing succeeds with exists=false; unreadable/invalid fails and never creates a file.
 [[nodiscard]] Result<DocumentSnapshot> readDocument(const std::filesystem::path& path);
@@ -94,6 +101,8 @@ struct SaveResult {
 // Arbitrary editors can still race between the final revision check and rename.
 [[nodiscard]] SaveResult saveDocument(const std::filesystem::path& path, const EditBatch& edits,
                                       const DocumentSchema& schema = {});
+[[nodiscard]] StagedSaveResult stageDocument(const std::filesystem::path& path, const EditBatch& edits,
+                                             const DocumentSchema& schema = {});
 
 // Conditional rollback for staged application: restores exact prior bytes/existence
 // only while the staged revision is current, under the same writer lock.

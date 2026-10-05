@@ -70,3 +70,23 @@ revision still being current; concurrent changes survive and must not be reporte
 - Installed consumer probe exercises public v2 decoding/schema/reset APIs.
 
 Remaining arbitrary-editor race: writers outside the sibling advisory lock can modify a file after the final revision check and before rename/unlink. Exact content equality detects observed changes; it is not a universal transaction or a history counter. Legacy explicit full-document writing retains its previous semantics and is outside the interactive editing protocol.
+
+## CA-001a consumer acceptance correction
+
+Baseline: published `7e83cacde8911452741420a29abbfe4465b7d52b`. Settings rollback review exposed a contract gap:
+a pre-lock snapshot can miss unrelated changes subsequently merged by the save. Restoring that snapshot would erase
+those changes even when the staged revision is still current. `stageDocument()` and `stageAppearanceDocument()`
+return a separate StagedSaveResult containing the unchanged SaveResult API and the exact pre-write snapshot captured
+under the advisory lock. Existing SaveResult layout and save/restore symbols remain compatible. Failed pre-replacement
+saves have no rollback snapshot; a durability failure includes it because replacement already happened.
+
+A regression also reproduced appearance saves classifying an unreadable source directory as Invalid instead of
+StorageFailure (before correction: `/tmp/holonight-config-staging-regression.log`). Appearance saves now use the same
+I/O classification as generic document saves. New regression coverage exercises unrelated edits between the client
+baseline read and staging, exact rollback preservation, original absence, conflicts and post-replacement faults.
+
+CA-001a verification, 2026-10-05: local CTest passed both behavioral/storage and installed-consumer suites. Full
+`task tidy` and `task format-check` passed. Clean `task ci` passed build-test, static-checks (full source/test tidy
+and formatting) and licensing (70/70 files); complete logs reviewed at `build/ci/20261005T205743Z-0h066bn9/`.
+Mock launcher failures in the build log are deliberate cases of the four passing launcher tests. The installed
+consumer resolves the additive staging API and checks its invalid-destination outcome.

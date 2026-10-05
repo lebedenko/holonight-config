@@ -179,7 +179,8 @@ SaveResult removeDocument(const std::filesystem::path& path, const std::filesyst
 
 namespace {
 SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& edits, const DocumentSchema& schema,
-                          const DocumentRevision* staged, const DocumentSnapshot* previous) {
+                          const DocumentRevision* staged, const DocumentSnapshot* previous,
+                          std::optional<DocumentSnapshot>* before = nullptr) {
   if (path.empty() || path.filename().empty()) {
     return failure(SaveStatus::StorageFailure, "empty configuration destination", path);
   }
@@ -238,6 +239,9 @@ SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& ed
   if (patched.status != SaveStatus::Success) {
     return patched;
   }
+  if (before != nullptr) {
+    *before = *current.value;
+  }
   if (patched.snapshot->revision.bytes == current.value->revision.bytes) {
     // An empty batch should neither create a missing file nor replace an unchanged one.
     patched.snapshot = std::move(current.value);
@@ -249,6 +253,15 @@ SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& ed
 
 SaveResult saveDocument(const std::filesystem::path& path, const EditBatch& edits, const DocumentSchema& schema) {
   return updateDocument(path, edits, schema, nullptr, nullptr);
+}
+StagedSaveResult stageDocument(const std::filesystem::path& path, const EditBatch& edits,
+                               const DocumentSchema& schema) {
+  StagedSaveResult staged;
+  staged.result = updateDocument(path, edits, schema, nullptr, nullptr, &staged.previous);
+  if (staged.result.status != SaveStatus::Success && staged.result.status != SaveStatus::DurabilityFailure) {
+    staged.previous.reset();
+  }
+  return staged;
 }
 SaveResult restoreDocument(const std::filesystem::path& path, const DocumentRevision& staged,
                            const DocumentSnapshot& previous, const DocumentSchema& schema) {

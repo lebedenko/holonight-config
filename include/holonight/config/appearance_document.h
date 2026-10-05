@@ -16,4 +16,5 @@ struct AppearanceDocument {
 [[nodiscard]] DocumentSchema appearanceDocumentSchema();
 // Adds/updates only version metadata and requested edits; never rewrites other values.
 [[nodiscard]] SaveResult saveAppearanceDocument(const std::filesystem::path& path, const EditBatch& edits);
+[[nodiscard]] StagedSaveResult stageAppearanceDocument(const std::filesystem::path& path, const EditBatch& edits);
 }  // namespace HoloNight::Config

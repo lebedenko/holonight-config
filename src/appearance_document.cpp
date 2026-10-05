@@ -146,26 +146,33 @@ DocumentSchema appearanceDocumentSchema() {
 }
 
 SaveResult saveAppearanceDocument(const std::filesystem::path& path, const EditBatch& edits) {
+  return stageAppearanceDocument(path, edits).result;
+}
+
+StagedSaveResult stageAppearanceDocument(const std::filesystem::path& path, const EditBatch& edits) {
   // Version is a reserved metadata edit. Caller edits cannot override it.
   auto current = readAppearanceDocument(path);
   if (!current) {
     SaveResult result;
-    result.status = SaveStatus::Invalid;
     result.diagnostics = std::move(current.diagnostics);
-    return result;
+    result.status =
+        std::ranges::any_of(result.diagnostics, [](const auto& item) { return item.code == ErrorCode::IoError; })
+            ? SaveStatus::StorageFailure
+            : SaveStatus::Invalid;
+    return {.result = std::move(result), .previous = std::nullopt};
   }
   EditBatch batch = edits;
   if (std::ranges::any_of(batch, [](const Edit& edit) { return edit.key == KeyPath{"version"}; })) {
     SaveResult result;
     result.status = SaveStatus::Invalid;
     result.diagnostics.push_back(diagnostic("version is reserved document metadata", current.value->snapshot));
-    return result;
+    return {.result = std::move(result), .previous = std::nullopt};
   }
   batch.push_back({
       .key = {"version"},
       .baseline = current.value->snapshot.value({"version"}),
       .pending = Value{kEditingDocumentVersion},
   });
-  return saveDocument(path, batch, appearanceDocumentSchema());
+  return stageDocument(path, batch, appearanceDocumentSchema());
 }
 }  // namespace HoloNight::Config

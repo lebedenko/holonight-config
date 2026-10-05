@@ -138,3 +138,9 @@ cannot be saved through the appearance editing API. `saveAppearanceDocument()` u
 valid v1 document by changing only its version metadata and requested values. New documents
 use v2. Reset removes an override. The provider does not enable GUI writes: consumer and
 adapter compatibility must pass before Settings adopts v2 saves.
+
+For asynchronous appearance application, use `stageAppearanceDocument()` (or generic `stageDocument()`). Its
+`previous` snapshot is captured under the writer lock, so it includes unrelated changes merged after your client
+baseline read. Pass that snapshot and the resulting staged revision to `restoreDocument()` on application failure.
+A pre-lock client snapshot is not a safe rollback baseline. Pre-replacement failures have no `previous` snapshot;
+post-replacement durability failures include it. These APIs preserve the existing SaveResult layout and save APIs.

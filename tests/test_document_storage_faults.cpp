@@ -74,3 +74,25 @@ TEST_CASE(document_storage_failures_distinguish_before_and_after_replacement) {
     }
   }
 }
+
+TEST_CASE(staged_storage_failure_captures_previous_only_after_replacement) {
+  using namespace HoloNight::Config;
+  for (const auto injected : {Fault::Write, Fault::DirectorySync}) {
+    TestSupport::TemporaryDirectory directory;
+    const auto path = directory.child("config.toml");
+    {
+      std::ofstream file(path);
+      file << "x=1\n";
+    }
+    fault = injected;
+    const auto staged =
+        stageDocument(path, {{.key = {"x"}, .baseline = Value{std::int64_t{1}}, .pending = Value{std::int64_t{2}}}});
+    fault = Fault::None;
+    const bool replaced = injected == Fault::DirectorySync;
+    EXPECT_EQ(staged.result.status, replaced ? SaveStatus::DurabilityFailure : SaveStatus::StorageFailure);
+    EXPECT_EQ(staged.previous.has_value(), replaced);
+    if (staged.previous) {
+      EXPECT_EQ(staged.previous->revision.bytes, "x=1\n");
+    }
+  }
+}

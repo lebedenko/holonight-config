@@ -366,3 +366,39 @@ TEST_CASE(document_guarded_rollback_restores_original_absence) {
             SaveStatus::Success);
   EXPECT_FALSE(std::filesystem::exists(path));
 }
+
+TEST_CASE(appearance_save_classifies_unreadable_source_as_storage_failure) {
+  const auto directory = std::filesystem::temp_directory_path();
+  const auto result = saveAppearanceDocument(directory, {});
+  EXPECT_EQ(result.status, SaveStatus::StorageFailure);
+}
+
+TEST_CASE(staged_rollback_preserves_unrelated_edits_merged_after_the_baseline_read) {
+  TestSupport::TemporaryDirectory directory;
+  const auto path = directory.child("appearance.toml");
+  write(path, "version=2\n[theme]\naccent='blue' # keep\n");
+  const auto baseline = *readDocument(path).value;
+  // Another writer adds unrelated content before our staged save acquires the lock.
+  const std::string external = baseline.revision.bytes + "[future]\nvalue='external' # preserve\n";
+  write(path, external);
+  const auto staged = stageAppearanceDocument(path, {set(baseline, {"theme", "accent"}, std::string{"red"})});
+  EXPECT_EQ(staged.result.status, SaveStatus::Success);
+  EXPECT_TRUE(staged.previous.has_value());
+  EXPECT_EQ(staged.previous->revision.bytes, external);
+  EXPECT_EQ(
+      restoreDocument(path, staged.result.snapshot->revision, *staged.previous, appearanceDocumentSchema()).status,
+      SaveStatus::Success);
+  EXPECT_EQ(readDocument(path).value->revision.bytes, external);
+}
+
+TEST_CASE(staged_save_reports_no_previous_snapshot_on_failure_and_captures_absence) {
+  TestSupport::TemporaryDirectory directory;
+  const auto path = directory.child("config.toml");
+  const auto staged = stageDocument(path, {{.key = {"enabled"}, .baseline = std::nullopt, .pending = Value{true}}});
+  EXPECT_EQ(staged.result.status, SaveStatus::Success);
+  EXPECT_TRUE(staged.previous.has_value());
+  EXPECT_FALSE(staged.previous->revision.exists);
+  const auto conflict = stageDocument(path, {{.key = {"enabled"}, .baseline = Value{false}, .pending = Value{false}}});
+  EXPECT_EQ(conflict.result.status, SaveStatus::Conflict);
+  EXPECT_FALSE(conflict.previous.has_value());
+}
