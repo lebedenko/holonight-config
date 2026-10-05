@@ -83,3 +83,58 @@ codes live under ignored `build/ci/<run>/`. Failed logs also print to the consol
 Any required failure makes the task fail. For focused diagnosis use
 `python3 scripts/ci/run.py --lane static-checks`. Run launcher regressions with
 `python3 scripts/ci/test_launcher.py`. Releases/publication remain remote operations.
+
+## Preserving document edits
+
+`document.h` provides toolkit-neutral snapshots, schemas and edit batches. `readDocument()`
+returns a missing snapshot without creating a file; unreadable and malformed files return
+structured diagnostics. Snapshots retain exact original bytes, byte source spans and typed
+values. A `KeyPath` is a vector of segments: `{"tray", "icon_overrides", "org.example.App"}`
+contains three segments, so quoted keys containing dots remain unambiguous.
+
+An `Edit` carries the baseline override (`nullopt` means absent) and the pending override
+(`nullopt` means reset). `saveDocument()` reads current disk state under a stable sibling
+`<canonical-target>.lock` advisory lock, merges unrelated edits, converges identical edits,
+and returns baseline/disk/pending values for conflicting keys. Pending edits remain owned
+by the caller. Re-resolve individual conflicts against the latest disk value and retry;
+there is no whole-document overwrite option.
+
+The TOML editor uses toml++ source spans and lexical inspection to replace only selected
+values or remove their assignments. It retains surrounding comments and sections, including
+comments within reset arrays. Arrays and inline tables are whole values. Arrays of tables
+are whole conflict values; their replacement and edits inside inline tables currently return
+`UnsupportedPatch`. Insertion into unsupported table arrangements also fails unchanged.
+Every candidate is reparsed and schema-validated before writing. Unknown fields remain in
+place unless a schema explicitly rejects them. Aggregate literals are parsed and normalized
+before comparison; adding extra assignments through a literal is rejected.
+
+Saving follows existing symlinks to their canonical target and rechecks both that target and
+the exact content revision immediately before replacement. Existing permission bits survive;
+new files have mode `0600`. A same-directory temporary file is fully written and synced,
+renamed, then the parent directory is synced. `StorageFailure` leaves the destination
+unreplaced; `DurabilityFailure` includes the snapshot already replaced on disk and means the
+directory sync failed. Callers must account for that partial durability outcome.
+
+The lock coordinates participating writers only. An arbitrary editor can still write between
+the final revision check and rename. Do not delete the stable lock file after saving. An
+explicit legacy `writeAtomically()` call retains its replacement/serialization contract;
+new interactive editors should use the document APIs for preservation and coordination.
+
+`restoreDocument()` supports staged application failures: it restores exact previous bytes
+or previous absence under the same lock only if the staged content revision is still current.
+Otherwise it returns `RevisionChanged` and preserves the external document. A successful
+adapter operation must also compare its staged revision before reporting application success.
+
+## Appearance document v2
+
+`appearance_document.h` adds sparse v2 decoding and editing while preserving the explicit
+v1 `parse()` and `serialize()` APIs. `load()` accepts both document formats. Document version
+metadata lives in `AppearanceDocument::document_version`; the effective `Appearance` model
+retains its existing v1 meaning for resolvers and adapters.
+
+Absent v2 preferences use typed defaults. Invalid known types/ranges/enums reject the
+document; unknown fields remain untouched and produce warnings. Unsupported versions
+cannot be saved through the appearance editing API. `saveAppearanceDocument()` upgrades a
+valid v1 document by changing only its version metadata and requested values. New documents
+use v2. Reset removes an override. The provider does not enable GUI writes: consumer and
+adapter compatibility must pass before Settings adopts v2 saves.

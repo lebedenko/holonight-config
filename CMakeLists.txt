@@ -18,7 +18,10 @@ pkg_check_modules(TOMLPLUSPLUS REQUIRED IMPORTED_TARGET tomlplusplus)
 
 add_library(holonight_config SHARED
     src/appearance.cpp
+    src/appearance_document.cpp
     src/codec.cpp
+    src/document.cpp
+    src/document_store.cpp
     src/path.cpp
     src/store.cpp
 )
@@ -110,6 +113,9 @@ if(CLANG_TIDY)
     set(HOLONIGHT_CONFIG_TIDY_SOURCES
         src/appearance.cpp
         src/codec.cpp
+        src/appearance_document.cpp
+        src/document.cpp
+        src/document_store.cpp
         src/path.cpp
         src/store.cpp
     )
@@ -123,6 +129,8 @@ if(CLANG_TIDY)
             src/test_support.cpp
             tests/test_appearance.cpp
             tests/test_codec.cpp
+            tests/test_document.cpp
+            tests/test_document_storage_faults.cpp
             tests/test_main.cpp
             tests/test_assertions.cpp
             tests/test_path.cpp

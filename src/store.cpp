@@ -1,5 +1,6 @@
 #include "holonight/config/store.h"
 
+#include "holonight/config/appearance_document.h"
 #include "holonight/config/codec.h"
 
 #include <array>
@@ -151,12 +152,16 @@ Result<LoadedAppearance> load(const std::filesystem::path& path) {
         {fileDiagnostic(ErrorCode::IoError, "failed to read appearance file", path)});
   }
 
-  Result<Appearance> parsed = parse(document, path);
+  auto snapshot = parseDocument(document, path);
+  if (!snapshot) {
+    return Result<LoadedAppearance>::failure(std::move(snapshot.diagnostics));
+  }
+  auto parsed = decodeAppearanceDocument(*snapshot.value);
   if (!parsed) {
     return Result<LoadedAppearance>::failure(std::move(parsed.diagnostics));
   }
   return Result<LoadedAppearance>::success(
-      LoadedAppearance{.appearance = std::move(*parsed.value), .origin = LoadOrigin::File},
+      LoadedAppearance{.appearance = std::move(parsed.value->appearance), .origin = LoadOrigin::File},
       std::move(parsed.diagnostics));
 }
 

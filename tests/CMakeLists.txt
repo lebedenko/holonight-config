@@ -3,9 +3,12 @@ add_executable(holonight_config_tests
     test_assertions.cpp
     test_appearance.cpp
     test_codec.cpp
+    test_document.cpp
+    test_document_storage_faults.cpp
     test_path.cpp
     test_store.cpp
 )
+target_link_options(holonight_config_tests PRIVATE -Wl,--export-dynamic)
 target_link_libraries(holonight_config_tests PRIVATE HoloNight::ConfigTestSupport)
 target_compile_features(holonight_config_tests PRIVATE cxx_std_20)
 add_test(NAME holonight_config_tests COMMAND holonight_config_tests)

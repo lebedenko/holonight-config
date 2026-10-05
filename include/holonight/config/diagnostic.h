@@ -9,7 +9,7 @@ namespace HoloNight::Config {
 
 // Preserve the existing public ABI; narrowing this enum changes shared-library layouts.
 // NOLINTNEXTLINE(performance-enum-size)
-enum class Severity : int { Info, Error };
+enum class Severity : int { Info, Error, Warning };
 
 // Preserve the existing public ABI; narrowing this enum changes shared-library layouts.
 // NOLINTNEXTLINE(performance-enum-size)
