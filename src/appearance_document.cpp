@@ -151,7 +151,14 @@ SaveResult saveAppearanceDocument(const std::filesystem::path& path, const EditB
 
 StagedSaveResult stageAppearanceDocument(const std::filesystem::path& path, const EditBatch& edits) {
   // Version is a reserved metadata edit. Caller edits cannot override it.
-  auto current = readAppearanceDocument(path);
+  const auto target = resolveDocumentTarget(path);
+  if (!target) {
+    StagedSaveResult failed;
+    failed.result.status = SaveStatus::StorageFailure;
+    failed.result.diagnostics = target.diagnostics;
+    return failed;
+  }
+  auto current = readAppearanceDocument(*target.value);
   if (!current) {
     SaveResult result;
     result.diagnostics = std::move(current.diagnostics);

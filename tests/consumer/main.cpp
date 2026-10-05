@@ -10,6 +10,9 @@ int main() {
   if (!decoded || decoded.value->appearance.theme.accent != "red") {
     return 2;
   }
+  if (resolveDocumentTarget({})) {
+    return 5;
+  }
   const auto staged = stageAppearanceDocument({}, {});
   if (staged.result.status != SaveStatus::StorageFailure || staged.previous.has_value()) {
     return 4;

@@ -94,6 +94,9 @@ struct StagedSaveResult {
 [[nodiscard]] Result<DocumentSnapshot> parseDocument(std::string_view bytes, const std::filesystem::path& path = {});
 // Missing succeeds with exists=false; unreadable/invalid fails and never creates a file.
 [[nodiscard]] Result<DocumentSnapshot> readDocument(const std::filesystem::path& path);
+// Resolves existing symlinks even when their final file/directory is missing.
+// Does not create anything; watchers can locate the target's existing parent.
+[[nodiscard]] Result<std::filesystem::path> resolveDocumentTarget(const std::filesystem::path& path);
 [[nodiscard]] std::vector<Diagnostic> validateDocument(const DocumentSnapshot& snapshot, const DocumentSchema& schema);
 [[nodiscard]] SaveResult patchDocument(const DocumentSnapshot& current, const EditBatch& edits,
                                        const DocumentSchema& schema = {});

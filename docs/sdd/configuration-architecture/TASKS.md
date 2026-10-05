@@ -22,3 +22,12 @@ This provider acceptance does not imply GUI, Qt watcher, adapter, Shell or ecosy
 - [x] Add locked pre-write snapshots without changing the existing SaveResult layout.
 - [x] Verify regression, preservation, storage faults and installed consumer; review full acceptance logs.
 - [ ] Commit, publish and hand off the additive provider revision.
+
+## CA-001b
+
+- [x] Reproduce saves through dangling file and directory symlinks.
+- [x] Resolve components safely and share read-only resolution with watchers.
+- [x] Verify relative/absolute targets, parent traversal, loops, retargeting and full preservation/storage fixtures.
+- [ ] Review clean acceptance, publish and hand off the correction.
+
+2026-10-06 local: CA-001b focused CTest and installed-package consumer, full tidy and formatting passed. Clean `task ci` passed build-test, static-checks and licensing (`build/ci/20261005T213144Z-882fslrm/`); all 180 log lines reviewed. Inline-table override presence regression is covered while child edits remain unsupported.

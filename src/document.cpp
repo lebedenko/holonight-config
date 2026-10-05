@@ -123,8 +123,11 @@ void collect(const toml::table& table, const KeyPath& prefix, DocumentSnapshot& 
         .end = offset(snapshot.revision.bytes, source.end),
     };
     snapshot.overrides.emplace(
-        std::move(path),
+        path,
         DocumentEntry{.value = valueOf(node), .source = span, .assignment = assignment(snapshot.revision.bytes, span)});
+    if (node.is_table()) {
+      collect(*node.as_table(), path, snapshot);
+    }
   }
 }
 

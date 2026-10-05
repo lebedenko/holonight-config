@@ -108,7 +108,10 @@ Every candidate is reparsed and schema-validated before writing. Unknown fields 
 place unless a schema explicitly rejects them. Aggregate literals are parsed and normalized
 before comparison; adding extra assignments through a literal is rejected.
 
-Saving follows existing symlinks to their canonical target and rechecks both that target and
+Snapshots include individual inline-table members and their source locations for accurate
+override status; editing those members remains unsupported. `resolveDocumentTarget()` resolves
+physical targets without creating files, including dangling file and directory symlinks.
+Saving follows existing symlinks to their physical target and rechecks both that target and
 the exact content revision immediately before replacement. Existing permission bits survive;
 new files have mode `0600`. A same-directory temporary file is fully written and synced,
 renamed, then the parent directory is synced. `StorageFailure` leaves the destination

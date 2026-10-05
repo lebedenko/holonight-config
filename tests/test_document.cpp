@@ -76,6 +76,8 @@ TEST_CASE(document_insertions_decode_quoted_section_paths) {
 
 TEST_CASE(document_inline_tables_and_arrays_are_whole_values) {
   const auto baseline = snapshot("inline = { x=1, y=2 } # untouched\narray=[1,2] # list\n");
+  EXPECT_EQ(baseline.value({"inline", "x"}), std::optional<Value>{std::int64_t{1}});
+  EXPECT_TRUE(baseline.overrides.contains({"inline", "y"}));
   auto saved = patchDocument(baseline, {set(baseline, {"array"}, AggregateValue{"[3, 4]"})});
   EXPECT_EQ(saved.status, SaveStatus::Success);
   EXPECT_TRUE(saved.snapshot->revision.bytes.starts_with("inline = { x=1, y=2 } # untouched\n"));
@@ -401,4 +403,72 @@ TEST_CASE(staged_save_reports_no_previous_snapshot_on_failure_and_captures_absen
   const auto conflict = stageDocument(path, {{.key = {"enabled"}, .baseline = Value{false}, .pending = Value{false}}});
   EXPECT_EQ(conflict.result.status, SaveStatus::Conflict);
   EXPECT_FALSE(conflict.previous.has_value());
+}
+
+TEST_CASE(document_save_follows_existing_symlink_with_a_missing_target) {
+  TestSupport::TemporaryDirectory directory;
+  const auto target = directory.child("target.toml");
+  const auto link = directory.child("link.toml");
+  std::filesystem::create_symlink(target.filename(), link);
+  const auto resolved = resolveDocumentTarget(link);
+  EXPECT_TRUE(static_cast<bool>(resolved));
+  EXPECT_EQ(*resolved.value, target);
+  EXPECT_FALSE(std::filesystem::exists(target));
+  const auto saved = saveDocument(link, {{.key = {"x"}, .baseline = std::nullopt, .pending = Value{std::int64_t{1}}}});
+  EXPECT_EQ(saved.status, SaveStatus::Success);
+  EXPECT_TRUE(std::filesystem::is_symlink(link));
+  EXPECT_TRUE(std::filesystem::exists(target));
+}
+
+TEST_CASE(document_save_follows_symlink_parent_with_a_missing_directory_target) {
+  TestSupport::TemporaryDirectory directory;
+  const auto target = directory.child("target-directory");
+  const auto link = directory.child("linked-directory");
+  std::filesystem::create_directory_symlink(target.filename(), link);
+  const auto saved =
+      saveDocument(link / "config.toml", {{.key = {"x"}, .baseline = std::nullopt, .pending = Value{std::int64_t{1}}}});
+  EXPECT_EQ(saved.status, SaveStatus::Success);
+  EXPECT_TRUE(std::filesystem::is_symlink(link));
+  EXPECT_TRUE(std::filesystem::exists(target / "config.toml"));
+}
+
+TEST_CASE(document_save_resolves_dot_dot_after_following_the_directory_link) {
+  TestSupport::TemporaryDirectory directory;
+  const auto target_directory = directory.child("physical/child");
+  std::filesystem::create_directories(target_directory);
+  const auto link = directory.child("logical");
+  std::filesystem::create_directory_symlink(target_directory, link);
+  const auto saved = saveDocument(link / ".." / "config.toml",
+                                  {{.key = {"x"}, .baseline = std::nullopt, .pending = Value{std::int64_t{1}}}});
+  EXPECT_EQ(saved.status, SaveStatus::Success);
+  EXPECT_TRUE(std::filesystem::exists(directory.child("physical/config.toml")));
+  EXPECT_FALSE(std::filesystem::exists(directory.child("config.toml")));
+}
+
+TEST_CASE(document_save_rejects_symlink_loops_and_non_directory_traversal) {
+  TestSupport::TemporaryDirectory directory;
+  const auto link = directory.child("loop");
+  std::filesystem::create_symlink(link.filename(), link);
+  const auto edits = EditBatch{{.key = {"x"}, .baseline = std::nullopt, .pending = Value{std::int64_t{1}}}};
+  EXPECT_EQ(saveDocument(link, edits).status, SaveStatus::StorageFailure);
+  EXPECT_TRUE(std::filesystem::is_symlink(link));
+  const auto file = directory.child("file.toml");
+  write(file, "x=1\n");
+  EXPECT_EQ(saveDocument(file / ".." / "config.toml", edits).status, SaveStatus::StorageFailure);
+  EXPECT_FALSE(std::filesystem::exists(directory.child("config.toml")));
+  EXPECT_EQ(readDocument(file).value->revision.bytes, "x=1\n");
+}
+
+TEST_CASE(appearance_staging_creates_a_missing_symlink_target_without_replacing_the_link) {
+  TestSupport::TemporaryDirectory directory;
+  const auto target = directory.child("target.toml");
+  const auto link = directory.child("appearance.toml");
+  std::filesystem::create_symlink(target, link);
+  const auto staged = stageAppearanceDocument(
+      link, {{.key = {"theme", "accent"}, .baseline = std::nullopt, .pending = Value{std::string{"red"}}}});
+  EXPECT_EQ(staged.result.status, SaveStatus::Success);
+  EXPECT_TRUE(staged.previous.has_value());
+  EXPECT_FALSE(staged.previous->revision.exists);
+  EXPECT_TRUE(std::filesystem::is_symlink(link));
+  EXPECT_EQ(readAppearanceDocument(link).value->appearance.theme.accent, "red");
 }

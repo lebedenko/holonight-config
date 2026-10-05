@@ -90,3 +90,18 @@ CA-001a verification, 2026-10-05: local CTest passed both behavioral/storage and
 and formatting) and licensing (70/70 files); complete logs reviewed at `build/ci/20261005T205743Z-0h066bn9/`.
 Mock launcher failures in the build log are deliberate cases of the four passing launcher tests. The installed
 consumer resolves the additive staging API and checks its invalid-destination outcome.
+
+## CA-001b dangling target correction
+
+Baseline: published `b705ccb2bc7ab87c3bf9706ec42bb5c97dd4a5eb`. Missing file and directory symlink targets
+reproduced two failed saves (`/tmp/holonight-config-dangling-regression.log`). Storage now walks components and follows
+links before processing parent traversal; it retains existing symlinks while creating their missing targets. The
+same resolver is used for target rechecks, preserving retarget detection. Loops and traversal through non-directories
+fail without writes. Missing intermediate directories followed by parent traversal are rejected rather than
+pretending that an inaccessible path resolves to a different file.
+
+The additive, read-only `resolveDocumentTarget()` exposes this resolution for Qt watching: watchers must retain the
+target-parent watch after a symlink target is deleted, when QFileInfo canonicalFilePath becomes empty. It creates
+nothing and returns diagnostics for unavailable/invalid paths. Existing read and save API layouts are unchanged.
+
+Inline-table members now appear in snapshots with typed values and source locations. Their unsafe child edits remain rejected; arrays and arrays of tables remain whole conflict values. This corrects override presence before Settings adoption without changing snapshot layout.

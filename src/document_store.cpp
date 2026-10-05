@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <deque>
 #include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -10,6 +11,83 @@
 
 namespace HoloNight::Config {
 namespace {
+bool requireDirectory(const std::filesystem::path& path, std::error_code& error) {
+  if (std::filesystem::is_directory(path, error)) {
+    return true;
+  }
+  if (!error) {
+    error = std::make_error_code(std::errc::not_a_directory);
+  }
+  return false;
+}
+
+bool prependLinkTarget(const std::filesystem::path& candidate, std::filesystem::path& resolved,
+                       std::deque<std::filesystem::path>& pending, std::error_code& error) {
+  auto target = std::filesystem::read_symlink(candidate, error);
+  if (error) {
+    return false;
+  }
+  if (target.is_absolute()) {
+    resolved = target.root_path();
+    target = target.relative_path();
+  }
+  for (auto part = target.end(); part != target.begin();) {
+    --part;
+    pending.push_front(*part);
+  }
+  return true;
+}
+
+// weakly_canonical cannot resolve every dangling link. Walk components so writes
+// can create the target while retaining an existing link, including directory links.
+std::filesystem::path resolveTarget(const std::filesystem::path& path, std::error_code& error) {
+  const auto absolute = std::filesystem::absolute(path, error);
+  if (error) {
+    return {};
+  }
+  auto resolved = absolute.root_path();
+  const auto relative = absolute.relative_path();
+  std::deque<std::filesystem::path> pending(relative.begin(), relative.end());
+  int links = 0;
+  constexpr int kMaximumLinks = 40;
+  while (!pending.empty()) {
+    const auto component = pending.front();
+    pending.pop_front();
+    if (component.empty()) {
+      continue;
+    }
+    if (component == "." || component == "..") {
+      if (!requireDirectory(resolved, error)) {
+        return {};
+      }
+      if (component == "..") {
+        resolved = resolved.parent_path();
+      }
+      continue;
+    }
+    const auto candidate = resolved / component;
+    const auto status = std::filesystem::symlink_status(candidate, error);
+    if (error == std::errc::no_such_file_or_directory) {
+      error.clear();
+    }
+    if (error) {
+      return {};
+    }
+    if (!std::filesystem::is_symlink(status)) {
+      resolved = candidate;
+      continue;
+    }
+    if (++links > kMaximumLinks) {
+      error = std::make_error_code(std::errc::too_many_symbolic_link_levels);
+      return {};
+    }
+    if (!prependLinkTarget(candidate, resolved, pending, error)) {
+      return {};
+    }
+  }
+  return resolved;
+}
+
 class Descriptor {
  public:
   explicit Descriptor(int value) : value_(value) {}
@@ -102,8 +180,7 @@ SaveResult replaceDocument(const std::filesystem::path& path, const std::filesys
   }
   // Check both exact bytes/existence and the symlink target immediately before replacement.
   const auto latest = readDocument(target);
-  if (!latest || latest.value->revision != current.revision ||
-      std::filesystem::weakly_canonical(path, error) != target || error) {
+  if (!latest || latest.value->revision != current.revision || resolveTarget(path, error) != target || error) {
     return failure(SaveStatus::RevisionChanged, "configuration changed before replacement", path);
   }
   struct stat latest_metadata{};
@@ -159,8 +236,7 @@ SaveResult removeDocument(const std::filesystem::path& path, const std::filesyst
   }
   std::error_code error;
   const auto latest = readDocument(target);
-  if (!latest || latest.value->revision != current.revision ||
-      std::filesystem::weakly_canonical(path, error) != target || error) {
+  if (!latest || latest.value->revision != current.revision || resolveTarget(path, error) != target || error) {
     return failure(SaveStatus::RevisionChanged, "configuration changed before rollback removal", path);
   }
   if (::unlink(target.c_str()) != 0) {
@@ -185,12 +261,11 @@ SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& ed
     return failure(SaveStatus::StorageFailure, "empty configuration destination", path);
   }
   std::error_code error;
-  // weakly_canonical follows every existing symlink, including parent directory links.
-  auto target = std::filesystem::weakly_canonical(std::filesystem::absolute(path, error), error);
+  const auto target = resolveTarget(path, error);
   if (error) {
     return failure(SaveStatus::StorageFailure, error.message(), path);
   }
-  auto initial = readDocument(path);
+  auto initial = readDocument(target);
   if (!initial) {
     SaveResult result;
     result.diagnostics = std::move(initial.diagnostics);
@@ -216,7 +291,7 @@ SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& ed
       return storageError("lock configuration", path);
     }
   }
-  if (std::filesystem::weakly_canonical(path, error) != target || error) {
+  if (resolveTarget(path, error) != target || error) {
     return failure(SaveStatus::RevisionChanged, "configuration target changed", path);
   }
   auto current = readDocument(target);
@@ -250,6 +325,34 @@ SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& ed
   return replaceDocument(path, target, *current.value, std::move(patched));
 }
 }  // namespace
+
+Result<std::filesystem::path> resolveDocumentTarget(const std::filesystem::path& path) {
+  if (path.empty()) {
+    return Result<std::filesystem::path>::failure({
+        {
+            .code = ErrorCode::PathUnavailable,
+            .severity = Severity::Error,
+            .message = "empty configuration path",
+            .path = path,
+            .position = std::nullopt,
+        },
+    });
+  }
+  std::error_code error;
+  auto target = resolveTarget(path, error);
+  if (error) {
+    return Result<std::filesystem::path>::failure({
+        {
+            .code = ErrorCode::IoError,
+            .severity = Severity::Error,
+            .message = error.message(),
+            .path = path,
+            .position = std::nullopt,
+        },
+    });
+  }
+  return Result<std::filesystem::path>::success(std::move(target));
+}
 
 SaveResult saveDocument(const std::filesystem::path& path, const EditBatch& edits, const DocumentSchema& schema) {
   return updateDocument(path, edits, schema, nullptr, nullptr);
