@@ -105,3 +105,7 @@ target-parent watch after a symlink target is deleted, when QFileInfo canonicalF
 nothing and returns diagnostics for unavailable/invalid paths. Existing read and save API layouts are unchanged.
 
 Inline-table members now appear in snapshots with typed values and source locations. Their unsafe child edits remain rejected; arrays and arrays of tables remain whole conflict values. This corrects override presence before Settings adoption without changing snapshot layout.
+
+## CA-001c: rollback target identity
+
+Baseline `733781607124fc9bec0820c880e7467d08b34a50`. A symlink retargeted after staging to another file containing identical staged bytes passed the old revision-only rollback guard. Regression reproduced. Conditional rollback now also requires the physical target recorded in the locked pre-write snapshot. Refusal occurs before directory/lock creation and leaves both targets and the link untouched. Public layouts and symbols remain unchanged; callers use staging `previous`, while manually supplied snapshots must name the resolved destination.

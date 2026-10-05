@@ -254,6 +254,16 @@ SaveResult removeDocument(const std::filesystem::path& path, const std::filesyst
 }  // namespace
 
 namespace {
+bool rollbackTargetMatches(const std::filesystem::path& target, const DocumentSnapshot* previous) {
+  if (previous == nullptr) {
+    return true;
+  }
+  if (previous->path.empty()) {
+    return false;
+  }
+  std::error_code error;
+  return std::filesystem::absolute(previous->path, error).lexically_normal() == target && !error;
+}
 SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& edits, const DocumentSchema& schema,
                           const DocumentRevision* staged, const DocumentSnapshot* previous,
                           std::optional<DocumentSnapshot>* before = nullptr) {
@@ -264,6 +274,9 @@ SaveResult updateDocument(const std::filesystem::path& path, const EditBatch& ed
   const auto target = resolveTarget(path, error);
   if (error) {
     return failure(SaveStatus::StorageFailure, error.message(), path);
+  }
+  if (!rollbackTargetMatches(target, previous)) {
+    return failure(SaveStatus::RevisionChanged, "staged configuration target changed; rollback refused", path);
   }
   auto initial = readDocument(target);
   if (!initial) {

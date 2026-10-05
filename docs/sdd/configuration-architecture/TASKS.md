@@ -31,3 +31,12 @@ This provider acceptance does not imply GUI, Qt watcher, adapter, Shell or ecosy
 - [ ] Review clean acceptance, publish and hand off the correction.
 
 2026-10-06 local: CA-001b focused CTest and installed-package consumer, full tidy and formatting passed. Clean `task ci` passed build-test, static-checks and licensing (`build/ci/20261005T213144Z-882fslrm/`); all 180 log lines reviewed. Inline-table override presence regression is covered while child edits remain unsupported.
+
+## CA-001c
+
+- [x] Reproduce identical-byte symlink retargeting before rollback.
+- [x] Require the captured physical target as well as content revision.
+- [x] Verify positive linked-target rollback and retargeting/refusal, full fixtures, analysis and clean acceptance.
+- [ ] Publish and hand off.
+
+2026-10-06 local: CA-001c host behavioral/installed-package tests, full analysis and formatting passed. Clean `task ci` passed all three lanes (`build/ci/20261005T224553Z-q2wn0vb6/`); complete logs reviewed. Tests cover existing and originally absent targets; retargeted identical bytes cannot authorize rollback.

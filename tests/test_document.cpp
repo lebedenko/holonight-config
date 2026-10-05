@@ -472,3 +472,59 @@ TEST_CASE(appearance_staging_creates_a_missing_symlink_target_without_replacing_
   EXPECT_TRUE(std::filesystem::is_symlink(link));
   EXPECT_EQ(readAppearanceDocument(link).value->appearance.theme.accent, "red");
 }
+
+TEST_CASE(document_rollback_refuses_a_retargeted_symlink_even_with_identical_staged_bytes) {
+  TestSupport::TemporaryDirectory directory;
+  const auto first = directory.child("first.toml");
+  const auto second = directory.child("second.toml");
+  const auto link = directory.child("config.toml");
+  write(first, "x=1\n");
+  std::filesystem::create_symlink(first, link);
+  const auto baseline = *readDocument(link).value;
+  const auto staged = stageDocument(link, {set(baseline, {"x"}, std::int64_t{2})});
+  EXPECT_EQ(staged.result.status, SaveStatus::Success);
+  EXPECT_TRUE(staged.previous.has_value());
+  write(second, staged.result.snapshot->revision.bytes);
+  std::filesystem::remove(link);
+  std::filesystem::create_symlink(second, link);
+  const auto restored = restoreDocument(link, staged.result.snapshot->revision, *staged.previous);
+  EXPECT_EQ(restored.status, SaveStatus::RevisionChanged);
+  EXPECT_EQ(readDocument(second).value->revision.bytes, staged.result.snapshot->revision.bytes);
+  EXPECT_EQ(readDocument(first).value->revision.bytes, staged.result.snapshot->revision.bytes);
+  EXPECT_EQ(std::filesystem::read_symlink(link), second);
+}
+
+TEST_CASE(document_rollback_restores_the_unchanged_physical_target_through_a_symlink) {
+  TestSupport::TemporaryDirectory directory;
+  const auto target = directory.child("target.toml");
+  const auto link = directory.child("config.toml");
+  write(target, "x=1 # keep\n");
+  std::filesystem::create_symlink(target, link);
+  const auto baseline = *readDocument(link).value;
+  const auto staged = stageDocument(link, {set(baseline, {"x"}, std::int64_t{2})});
+  EXPECT_EQ(staged.result.status, SaveStatus::Success);
+  EXPECT_EQ(staged.previous->path, target);
+  const auto restored = restoreDocument(link, staged.result.snapshot->revision, *staged.previous);
+  EXPECT_EQ(restored.status, SaveStatus::Success);
+  EXPECT_EQ(readDocument(target).value->revision.bytes, "x=1 # keep\n");
+  EXPECT_TRUE(std::filesystem::is_symlink(link));
+}
+
+TEST_CASE(document_rollback_of_original_absence_never_removes_a_new_symlink_target) {
+  TestSupport::TemporaryDirectory directory;
+  const auto first = directory.child("first.toml");
+  const auto second = directory.child("second.toml");
+  const auto link = directory.child("config.toml");
+  std::filesystem::create_symlink(first, link);
+  const auto staged =
+      stageDocument(link, {{.key = {"x"}, .baseline = std::nullopt, .pending = Value{std::int64_t{2}}}});
+  EXPECT_EQ(staged.result.status, SaveStatus::Success);
+  EXPECT_FALSE(staged.previous->revision.exists);
+  write(second, staged.result.snapshot->revision.bytes);
+  std::filesystem::remove(link);
+  std::filesystem::create_symlink(second, link);
+  EXPECT_EQ(restoreDocument(link, staged.result.snapshot->revision, *staged.previous).status,
+            SaveStatus::RevisionChanged);
+  EXPECT_EQ(readDocument(second).value->revision.bytes, staged.result.snapshot->revision.bytes);
+  EXPECT_EQ(readDocument(first).value->revision.bytes, staged.result.snapshot->revision.bytes);
+}

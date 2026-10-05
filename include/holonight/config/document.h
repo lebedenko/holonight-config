@@ -108,7 +108,9 @@ struct StagedSaveResult {
                                              const DocumentSchema& schema = {});
 
 // Conditional rollback for staged application: restores exact prior bytes/existence
-// only while the staged revision is current, under the same writer lock.
+// only while the staged revision and captured physical target are current.
+// Pass stageDocument()/stageAppearanceDocument() previous; manually supplied
+// snapshots must name the resolved destination in path. Uses the same writer lock.
 [[nodiscard]] SaveResult restoreDocument(const std::filesystem::path& path, const DocumentRevision& staged,
                                          const DocumentSnapshot& previous, const DocumentSchema& schema = {});
 

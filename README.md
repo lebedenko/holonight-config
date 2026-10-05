@@ -124,7 +124,9 @@ explicit legacy `writeAtomically()` call retains its replacement/serialization c
 new interactive editors should use the document APIs for preservation and coordination.
 
 `restoreDocument()` supports staged application failures: it restores exact previous bytes
-or previous absence under the same lock only if the staged content revision is still current.
+or previous absence under the same lock only if the staged content revision and captured
+physical target are still current. Pass the locked `previous` snapshot from staging; manual
+snapshots must name the resolved destination in `path`.
 Otherwise it returns `RevisionChanged` and preserves the external document. A successful
 adapter operation must also compare its staged revision before reporting application success.
 
