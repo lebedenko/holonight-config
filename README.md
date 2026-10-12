@@ -9,14 +9,20 @@ HoloNight Config requires CMake 3.25, a C++20 compiler, pkg-config, and toml++ 3
 discovery is local and never downloads packages.
 
 ```sh
-cmake -S . -B build -DBUILD_TESTING=ON
-cmake --build build/debug
-ctest --test-dir build/test --output-on-failure
-cmake --install build --prefix /desired/prefix
+cmake --preset test
+cmake --build --preset test
+ctest --preset test
+cmake --install build/test --prefix /desired/prefix
 ```
 
 For local development, [Task](https://taskfile.dev/) provides the same entry points used during CI-oriented checks:
-`task build`, `task test`, `task format-check`, and `task tidy`.
+`task deps PRESET=test`, `task configure-tests`, `task build PRESET=test`, `task test`,
+`task format-check`, and `task tidy`. Only `task deps` prepares supplied local providers;
+Config has none. Configure/build/test validate installed prerequisites without acquisition.
+Set `HOLONIGHT_EXTERNAL_PREFIX` to use external packages installed below a custom prefix,
+including paths with spaces. Direct CMake callers use `CMAKE_PREFIX_PATH` or
+`-DHOLONIGHT_EXTERNAL_PREFIX=/desired/prefix`; system discovery remains available.
+Incompatible configured trees are preserved as `build/<preset>.previous-N`.
 
 An installed consumer uses the single supported production target:
 
@@ -69,14 +75,18 @@ See [tooling/README.md](tooling/README.md) for presets, local dependency overrid
 
 Run `task ci` with Git, Python 3, Task and an accessible Docker daemon; Podman is
 used when Docker is absent. The immutable linux/amd64 build image supplies the
-compiler, CMake, Ninja, clang tools and tomlplusplus. Other architectures require
+compiler, CMake, Ninja, clang tools and tomlplusplus from the qualified EDM-024
+Arch environment. Other architectures require
 configured amd64 emulation. REUSE licensing runs in its pinned 6.2.0 image.
 
 Current tracked edits and non-ignored new files enter a read-only snapshot; deleted
 and ignored files are omitted. New inputs are reported to add before pushing. Each
 build/test, format/full tidy, and licensing lane gets its own disposable writable
 copy. Development builds stay untouched and application artifacts are never reused.
-Container-layer caches remain usable. GitHub CI uses these same scripts and images.
+Images are explicitly pulled before each lane. Acceptance runs with networking disabled
+and image pulling forbidden. Build acceptance covers tests, the install-tree consumer,
+and a release build with tests disabled. Container-layer caches remain usable.
+GitHub CI uses these same scripts and images. Debian qualification is deferred.
 
 Complete logs, revision/dirty status, image identities, tool versions and lane exit
 codes live under ignored `build/ci/<run>/`. Failed logs also print to the console.

@@ -13,6 +13,8 @@ include(CMakePackageConfigHelpers)
 
 option(BUILD_TESTING "Build tests" OFF)
 
+include(tooling/dependencies.cmake)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(TOMLPLUSPLUS REQUIRED IMPORTED_TARGET tomlplusplus)
 

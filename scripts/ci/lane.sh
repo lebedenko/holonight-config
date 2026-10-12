@@ -20,11 +20,15 @@ case "$lane" in
     clang-format --version
     clang-tidy --version
     pkg-config --modversion tomlplusplus
-    cmake --preset debug-tests
+    python3 tooling/workflow.py deps --preset test
+    python3 tooling/workflow.py configure --preset test
     if [ "$lane" = build-test ]; then
       python3 scripts/ci/test_launcher.py
-      cmake --build --preset debug-tests --parallel
-      ctest --preset debug-tests
+      python3 scripts/ci/test_dependencies.py
+      python3 tooling/workflow.py build --preset test
+      python3 tooling/workflow.py test --preset test
+      python3 tooling/workflow.py configure --preset release
+      python3 tooling/workflow.py build --preset release
     else
       cmake --build build/test --target format-check
       cmake --build build/test --target tidy

@@ -64,7 +64,9 @@ def main():
                     print(f'  {name!r}')
             for lane in args.lane or LANES:
                 image = images['licensing' if lane == 'licensing' else 'build']
-                command = [runtime, 'run', '--rm', '--platform', report['platform'], '--user', f'{os.getuid()}:{os.getgid()}',
+                # Acquisition is explicit; acceptance cannot pull or access the network.
+                subprocess.run([runtime, 'pull', '--platform', report['platform'], image], check=True)
+                command = [runtime, 'run', '--rm', '--pull=never', '--network=none', '--platform', report['platform'], '--user', f'{os.getuid()}:{os.getgid()}',
                            '--mount', f'type=bind,src={source},dst=/input,readonly',
                            '--tmpfs', '/work:rw,exec,mode=1777', '--workdir', '/work',
                            '--entrypoint', '/bin/sh', image, '/input/scripts/ci/lane.sh', lane]

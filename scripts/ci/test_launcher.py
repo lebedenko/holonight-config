@@ -62,7 +62,7 @@ class LauncherTests(unittest.TestCase):
         arguments = Path(self.temporary.name) / 'podman-arguments.json'
         runtime.write_text('#!/usr/bin/env python3\nimport json, sys\nfrom pathlib import Path\n'
                            'if sys.argv[1] == "--version": print("fake-podman")\n'
-                           f'else: Path({str(arguments)!r}).write_text(json.dumps(sys.argv[1:]))\n')
+                           f'elif sys.argv[1] == "run": Path({str(arguments)!r}).write_text(json.dumps(sys.argv[1:]))\n')
         runtime.chmod(0o755)
         with patch.object(launcher.shutil, 'which', side_effect=lambda name: str(runtime) if name == 'podman' else None), \
              patch.object(launcher.os, 'getuid', return_value=1000), \
@@ -71,6 +71,8 @@ class LauncherTests(unittest.TestCase):
             self.assertEqual(launcher.main(), 0)
         command = json.loads(arguments.read_text())
         self.assertIn('--userns=keep-id', command)
+        self.assertIn('--pull=never', command)
+        self.assertIn('--network=none', command)
         self.assertEqual(command[command.index('--user') + 1], '1000:1000')
         self.assertTrue(command[command.index('--mount') + 1].endswith(',dst=/input,readonly'))
 
@@ -85,7 +87,7 @@ class LauncherTests(unittest.TestCase):
         scripts.mkdir(parents=True)
         (scripts / 'images.json').write_text('{"build":"build@sha256:fixture","licensing":"reuse@sha256:fixture"}')
         runtime = Path(self.temporary.name) / 'docker'
-        runtime.write_text('#!/bin/sh\nif [ "$1" = --version ]; then echo fake-runtime; exit 0; fi\nexit 17\n')
+        runtime.write_text('#!/bin/sh\nif [ "$1" = --version ]; then echo fake-runtime; exit 0; fi\nif [ "$1" = pull ]; then exit 0; fi\nexit 17\n')
         runtime.chmod(0o755)
         with patch.object(launcher.shutil, 'which', return_value=str(runtime)), patch('sys.argv', ['ci']):
             self.assertEqual(launcher.main(), 1)
