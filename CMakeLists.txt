@@ -13,8 +13,6 @@ include(CMakePackageConfigHelpers)
 
 option(BUILD_TESTING "Build tests" OFF)
 
-include(tooling/dependencies.cmake)
-
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(TOMLPLUSPLUS REQUIRED IMPORTED_TARGET tomlplusplus)
 
@@ -110,42 +108,9 @@ if(CLANG_FORMAT)
     )
 endif()
 
-find_program(CLANG_TIDY clang-tidy)
-if(CLANG_TIDY)
-    set(HOLONIGHT_CONFIG_TIDY_SOURCES
-        src/appearance.cpp
-        src/codec.cpp
-        src/appearance_document.cpp
-        src/document.cpp
-        src/document_store.cpp
-        src/path.cpp
-        src/store.cpp
-    )
-    add_custom_target(tidy-src
-        COMMAND ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR} ${HOLONIGHT_CONFIG_TIDY_SOURCES}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        VERBATIM
-    )
-    if(BUILD_TESTING)
-        set(HOLONIGHT_CONFIG_TIDY_TEST_SOURCES
-            src/test_support.cpp
-            tests/test_appearance.cpp
-            tests/test_codec.cpp
-            tests/test_document.cpp
-            tests/test_document_storage_faults.cpp
-            tests/test_main.cpp
-            tests/test_assertions.cpp
-            tests/test_path.cpp
-            tests/test_store.cpp
-            tests/consumer/main.cpp
-        )
-        add_custom_target(tidy-tests
-            COMMAND ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR} ${HOLONIGHT_CONFIG_TIDY_TEST_SOURCES}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            VERBATIM
-        )
-        add_custom_target(tidy DEPENDS tidy-src tidy-tests)
-    else()
-        add_custom_target(tidy DEPENDS tidy-src)
-    endif()
-endif()
+# Use the same direct compilation-database check as task tidy.
+add_custom_target(tidy
+  COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/scripts/quality.py" tidy --build "${CMAKE_BINARY_DIR}"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  VERBATIM
+)

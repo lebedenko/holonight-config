@@ -1,5 +1,7 @@
 # HoloNight Config
 
+For current build, test, container acceptance and provider workflows, see [DEVELOPMENT.md](DEVELOPMENT.md).
+
 Toolkit-neutral C++ configuration contracts shared by HoloNight components. The library owns the canonical global
 appearance document without depending on Qt or another HoloNight repository.
 
@@ -9,20 +11,13 @@ HoloNight Config requires CMake 3.25, a C++20 compiler, pkg-config, and toml++ 3
 discovery is local and never downloads packages.
 
 ```sh
-cmake --preset test
-cmake --build --preset test
-ctest --preset test
-cmake --install build/test --prefix /desired/prefix
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+cmake --install build/dev --prefix /desired/prefix
 ```
 
-For local development, [Task](https://taskfile.dev/) provides the same entry points used during CI-oriented checks:
-`task deps PRESET=test`, `task configure-tests`, `task build PRESET=test`, `task test`,
-`task format-check`, and `task tidy`. Only `task deps` prepares supplied local providers;
-Config has none. Configure/build/test validate installed prerequisites without acquisition.
-Set `HOLONIGHT_EXTERNAL_PREFIX` to use external packages installed below a custom prefix,
-including paths with spaces. Direct CMake callers use `CMAKE_PREFIX_PATH` or
-`-DHOLONIGHT_EXTERNAL_PREFIX=/desired/prefix`; system discovery remains available.
-Incompatible configured trees are preserved as `build/<preset>.previous-N`.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for current native and container commands.
 
 An installed consumer uses the single supported production target:
 
@@ -65,34 +60,6 @@ The detailed accepted contract and design rationale live in the
 ## License
 
 HoloNight Config is licensed under `GPL-3.0-or-later`. See [LICENSE](LICENSE).
-
-## Standalone developer tooling
-
-See [tooling/README.md](tooling/README.md) for presets, local dependency overrides, editor refresh,
-`task tooling:doctor`, and the independent Serena project.
-
-## Local push validation
-
-Run `task ci` with Git, Python 3, Task and an accessible Docker daemon; Podman is
-used when Docker is absent. The immutable linux/amd64 build image supplies the
-compiler, CMake, Ninja, clang tools and tomlplusplus from the qualified EDM-024
-Arch environment. Other architectures require
-configured amd64 emulation. REUSE licensing runs in its pinned 6.2.0 image.
-
-Current tracked edits and non-ignored new files enter a read-only snapshot; deleted
-and ignored files are omitted. New inputs are reported to add before pushing. Each
-build/test, format/full tidy, and licensing lane gets its own disposable writable
-copy. Development builds stay untouched and application artifacts are never reused.
-Images are explicitly pulled before each lane. Acceptance runs with networking disabled
-and image pulling forbidden. Build acceptance covers tests, the install-tree consumer,
-and a release build with tests disabled. Container-layer caches remain usable.
-GitHub CI uses these same scripts and images. Debian qualification is deferred.
-
-Complete logs, revision/dirty status, image identities, tool versions and lane exit
-codes live under ignored `build/ci/<run>/`. Failed logs also print to the console.
-Any required failure makes the task fail. For focused diagnosis use
-`python3 scripts/ci/run.py --lane static-checks`. Run launcher regressions with
-`python3 scripts/ci/test_launcher.py`. Releases/publication remain remote operations.
 
 ## Preserving document edits
 
