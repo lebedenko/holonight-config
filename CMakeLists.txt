@@ -17,6 +17,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(TOMLPLUSPLUS REQUIRED IMPORTED_TARGET tomlplusplus)
 
 add_library(holonight_config SHARED
+    src/input.cpp
     src/appearance.cpp
     src/appearance_document.cpp
     src/codec.cpp

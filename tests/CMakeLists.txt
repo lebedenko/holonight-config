@@ -1,4 +1,5 @@
 add_executable(holonight_config_tests
+    test_input.cpp
     test_main.cpp
     test_assertions.cpp
     test_appearance.cpp
