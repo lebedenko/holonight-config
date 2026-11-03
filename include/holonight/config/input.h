@@ -5,6 +5,7 @@
 #include "holonight/config/path.h"
 namespace HoloNight::Config {
 enum class InputProfile : unsigned char { Standard, VimNavigation };
+[[nodiscard]] DocumentSchema inputDocumentSchema();
 [[nodiscard]] Result<InputProfile> decodeInputDocument(const DocumentSnapshot& document);
 [[nodiscard]] Result<std::filesystem::path> resolveInputPath(const Environment& environment);
 [[nodiscard]] Result<std::filesystem::path> resolveInputPath();

@@ -2,20 +2,32 @@
 
 #include <holonight/config/input.h>
 using namespace HoloNight::Config;
-TEST_CASE(input_profiles_are_versioned_and_independent) {
+TEST_CASE(input_navigation_is_shared_and_defaults_to_standard) {
   EXPECT_EQ(*decodeInputDocument(DocumentSnapshot{}).value, InputProfile::Standard);
-  for (const auto& name : {"standard", "vim-navigation"}) {
-    const auto document = parseDocument(std::string{"version = 1\nprofile = '"} + name + "'\n");
+  for (const auto& bytes : {"", "[bar.workspaces]\ncount = 5", "[input]\nnavigation = 'standard'"}) {
+    const auto document = parseDocument(bytes);
     EXPECT_TRUE(document);
-    EXPECT_TRUE(decodeInputDocument(*document.value));
+    EXPECT_EQ(*decodeInputDocument(*document.value).value, InputProfile::Standard);
   }
-  for (const auto& bytes : {"", "version = 2\nprofile = 'standard'", "version = 1\nprofile = 'vim'",
-                            "version = true\nprofile = 'standard'"}) {
+  const auto vim = parseDocument("[input]\nnavigation = 'vim-navigation'");
+  EXPECT_EQ(*decodeInputDocument(*vim.value).value, InputProfile::VimNavigation);
+  for (const auto& bytes : {"[input]\nnavigation = 'vim'", "[input]\nnavigation = true"}) {
     const auto document = parseDocument(bytes);
     EXPECT_TRUE(document);
     EXPECT_FALSE(decodeInputDocument(*document.value));
+    EXPECT_FALSE(validateDocument(*document.value, inputDocumentSchema()).empty());
   }
   const auto path = resolveInputPath({{"HOME", "/home/test"}, {"HOLONIGHT_APPEARANCE_FILE", "/other/theme.toml"}});
   EXPECT_TRUE(path);
-  EXPECT_EQ(path.value->string(), "/home/test/.config/holonight/input.toml");
+  EXPECT_EQ(path.value->string(), "/home/test/.config/holonight/config.toml");
+}
+TEST_CASE(input_patch_preserves_other_preferences_and_comments) {
+  const auto document = parseDocument("# preferences\n[bar.workspaces]\ncount = 7 # keep\n[unknown]\nfoo = 'bar'\n");
+  const auto patched =
+      patchDocument(*document.value, {{{"input", "navigation"}, std::nullopt, Value{std::string{"vim-navigation"}}}},
+                    inputDocumentSchema());
+  EXPECT_EQ(patched.status, SaveStatus::Success);
+  EXPECT_TRUE(patched.snapshot->revision.bytes.find("count = 7 # keep") != std::string::npos);
+  EXPECT_TRUE(patched.snapshot->revision.bytes.find("foo = 'bar'") != std::string::npos);
+  EXPECT_EQ(*decodeInputDocument(*patched.snapshot).value, InputProfile::VimNavigation);
 }
