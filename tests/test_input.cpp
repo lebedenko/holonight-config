@@ -23,9 +23,10 @@ TEST_CASE(input_navigation_is_shared_and_defaults_to_standard) {
 }
 TEST_CASE(input_patch_preserves_other_preferences_and_comments) {
   const auto document = parseDocument("# preferences\n[bar.workspaces]\ncount = 7 # keep\n[unknown]\nfoo = 'bar'\n");
-  const auto patched =
-      patchDocument(*document.value, {{{"input", "navigation"}, std::nullopt, Value{std::string{"vim-navigation"}}}},
-                    inputDocumentSchema());
+  const auto patched = patchDocument(
+      *document.value,
+      {{.key = {"input", "navigation"}, .baseline = std::nullopt, .pending = Value{std::string{"vim-navigation"}}}},
+      inputDocumentSchema());
   EXPECT_EQ(patched.status, SaveStatus::Success);
   EXPECT_TRUE(patched.snapshot->revision.bytes.find("count = 7 # keep") != std::string::npos);
   EXPECT_TRUE(patched.snapshot->revision.bytes.find("foo = 'bar'") != std::string::npos);
